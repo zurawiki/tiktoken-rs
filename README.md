@@ -18,7 +18,15 @@ Ready-made tokenizer library for working with GPT and tiktoken
 cargo add tiktoken-rs
 ```
 
-See the examples in the repo for other use-cases.
+Then in your rust code, call the API
+```rust
+use tiktoken_rs::tiktoken::p50k_base;
+let bpe = p50k_base().unwrap();
+let tokens = bpe.encode_with_special_tokens("This is an example         with a lot of spaces");
+println!("Token count: {}", tokens.len());
+```
+
+See the examples in the repo for  usecases.
 
 ## Encountered any bugs?
 

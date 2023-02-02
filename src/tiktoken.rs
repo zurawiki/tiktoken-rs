@@ -1,7 +1,6 @@
-// Adapted from https://github.com/openai/tiktoken
-// Copyright (c) 2022 OpenAI, Shantanu Jain
-// License: https://github.com/openai/tiktoken/blob/main/LICENSE
-
+/// Adapted from https://github.com/openai/tiktoken
+/// Copyright (c) 2022 OpenAI, Shantanu Jain
+/// License: https://github.com/openai/tiktoken/blob/main/LICENSE
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine as _};
 use fancy_regex::Regex;
@@ -552,7 +551,7 @@ impl CoreBPE {
     // Miscellaneous
     // ====================
 
-   pub fn token_byte_values(&self) -> Vec<Vec<u8>> {
+    pub fn token_byte_values(&self) -> Vec<Vec<u8>> {
         self.sorted_token_bytes.clone()
     }
 }

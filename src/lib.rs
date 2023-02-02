@@ -1,52 +1,20 @@
-//! Async Rust library for tokenizing text for GPT using tiktoken
-
+//! Rust library for tokenizing text for GPT using tiktoken
 //!
-//! ## Creating client
-//!
-//! ```
-//! use async_openai::Client;
-//!
-//! // Create a client with api key from env var OPENAI_API_KEY and default base url.
-//! let client = Client::new();
-//!
-//! // OR use API key from different source
-//! let api_key = "sk-..."; // This secret could be from a file, or environment variable.
-//! let client = Client::new().with_api_key(api_key);
-//!
-//! // Use organization other than default when making requests
-//! let client = Client::new().with_org_id("the-org");
-//! ```
-//!
-//! ## Making requests
+//! ## Counting token length
 //!
 //!```
 //!# tokio_test::block_on(async {
+//! use tiktoken_rs::tiktoken::p50k_base;
 //!
-//! use async_openai::{Client, types::{CreateCompletionRequestArgs}};
+//! let bpe = p50k_base().unwrap();
+//! let tokens = bpe.encode_with_special_tokens("This is a test         with a lot of spaces");
+//! println!("Token count: {}", tokens.len());
 //!
-//! // Create client
-//! let client = Client::new();
-//!
-//! // Create request using builder pattern
-//! let request = CreateCompletionRequestArgs::default()
-//!     .model("text-davinci-003")
-//!     .prompt("Tell me the recipe of alfredo pasta")
-//!     .max_tokens(40_u16)
-//!     .build()
-//!     .unwrap();
-//!
-//! // Call API
-//! let response = client
-//!     .completions()      // Get the API "group" (completions, images, etc.) from the client
-//!     .create(request)    // Make the API call in that "group"
-//!     .await
-//!     .unwrap();
-//!
-//! println!("{}", response.choices.first().unwrap().text);
 //! # });
 //!```
 //!
 //! ## Examples
-//! For full working examples for all supported features see [examples](https://github.com/64bit/async-openai/tree/main/examples) directory in the repository.
+//! For full working examples for all supported features see [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/examples) directory in the repository.
 //!
+/// Adaptation of the tiktoken crate for use in Rust projects
 pub mod tiktoken;

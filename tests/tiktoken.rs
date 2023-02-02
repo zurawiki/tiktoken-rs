@@ -30,7 +30,7 @@ fn r50k_base_test() {
     let tokens = bpe.encode_with_special_tokens("This is a test         with a lot of spaces");
     let decoded = bpe.decode(tokens.clone()).unwrap();
     assert_eq!(decoded, "This is a test         with a lot of spaces");
-    println!("{:?}", tokens);
+    println!("{tokens:?}");
     assert_eq!(
         tokens,
         vec![
@@ -49,7 +49,7 @@ fn p50k_base_singleton_test() {
         let guard = bpe1.lock();
         let tokens =
             guard.encode_with_special_tokens("This is a test         with a lot of spaces");
-        guard.decode(tokens.clone()).unwrap();
+        guard.decode(tokens).unwrap();
     }
     // println!("p50k_base encode/decode 1: {:?}", now.elapsed());
 
@@ -61,7 +61,7 @@ fn p50k_base_singleton_test() {
         let guard = bpe2.lock();
         let tokens =
             guard.encode_with_special_tokens("This is a test         with a lot of spaces");
-        guard.decode(tokens.clone()).unwrap();
+        guard.decode(tokens).unwrap();
     }
     // println!("p50k_base encode/decode 2: {:?}", now.elapsed());
 }
