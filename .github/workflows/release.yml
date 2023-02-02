@@ -80,15 +80,15 @@ jobs:
                   profile: minimal
                   override: true
 
-            - name: Upload binary
-              uses: taiki-e/upload-rust-binary-action@v1
-              with:
-                  bin: tiktoken-rs
-                  target: ${{ matrix.target }}
-                  ref: refs/tags/${{ inputs.publish-tag }}
-                  tar: all
-                  zip: windows
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 1
-                  CARGO_PROFILE_RELEASE_LTO: true
+            # - name: Upload binary
+            #   uses: taiki-e/upload-rust-binary-action@v1
+            #   with:
+            #       bin: tiktoken-rs
+            #       target: ${{ matrix.target }}
+            #       ref: refs/tags/${{ inputs.publish-tag }}
+            #       tar: all
+            #       zip: windows
+            #   env:
+            #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            #       CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 1
+            #       CARGO_PROFILE_RELEASE_LTO: true
