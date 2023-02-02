@@ -3,14 +3,11 @@
 //! ## Counting token length
 //!
 //!```
-//!# tokio_test::block_on(async {
-//! use tiktoken_rs::tiktoken::p50k_base;
+//!  use tiktoken_rs::tiktoken::p50k_base;
 //!
-//! let bpe = p50k_base().unwrap();
-//! let tokens = bpe.encode_with_special_tokens("This is a test         with a lot of spaces");
-//! println!("Token count: {}", tokens.len());
-//!
-//! # });
+//!  let bpe = p50k_base().unwrap();
+//!  let tokens = bpe.encode_with_special_tokens("This is a test         with a lot of spaces");
+//!  println!("Token count: {}", tokens.len());
 //!```
 //!
 //! ## Examples
