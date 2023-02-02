@@ -83,7 +83,7 @@ jobs:
             - name: Upload binary
               uses: taiki-e/upload-rust-binary-action@v1
               with:
-                  bin: gptee
+                  bin: tiktoken-rs
                   target: ${{ matrix.target }}
                   ref: refs/tags/${{ inputs.publish-tag }}
                   tar: all
