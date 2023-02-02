@@ -23,7 +23,7 @@ Then in your rust code, call the API
 ```rust
 use tiktoken_rs::tiktoken::p50k_base;
 let bpe = p50k_base().unwrap();
-let tokens = bpe.encode_with_special_tokens("This is an example         with a lot of spaces");
+let tokens = bpe.encode_with_special_tokens("This is an example");
 println!("Token count: {}", tokens.len());
 ```
 
