@@ -114,7 +114,7 @@ jobs:
             - id: check
               run: |
                   set +e
-                  ./scripts/is_version_already_uploaded.sh tiktoken-rs
+                  ./scripts/is_version_already_uploaded.sh gptee
                   export EXIT_CODE="$?"
                   set -e
                   if [[ "$EXIT_CODE" == "7" ]]; then
@@ -129,5 +129,5 @@ jobs:
             - name: Determine the tag name
               id: tag
               run: |
-                  export TAG_NAME="v$(./scripts/get_current_version.sh tiktoken-rs)"
+                  export TAG_NAME="v$(./scripts/get_current_version.sh gptee)"
                   echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT

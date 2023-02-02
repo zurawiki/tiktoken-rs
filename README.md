@@ -19,6 +19,7 @@ cargo add tiktoken-rs
 ```
 
 Then in your rust code, call the API
+
 ```rust
 use tiktoken_rs::tiktoken::p50k_base;
 let bpe = p50k_base().unwrap();
