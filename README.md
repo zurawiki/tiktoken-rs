@@ -26,7 +26,7 @@ let tokens = bpe.encode_with_special_tokens("This is an example         with a l
 println!("Token count: {}", tokens.len());
 ```
 
-See the examples in the repo for  usecases.
+See the examples in the repo for usecases.
 
 ## Encountered any bugs?
 
