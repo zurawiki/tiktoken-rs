@@ -12,30 +12,70 @@ fn very_simple_test() {
     assert_eq!(res, vec![b"ab", b"cd"]);
 }
 
+fn test_roundtrip(bpe: &CoreBPE, text: &str) {
+    let tokens = bpe.encode_with_special_tokens(text);
+    let decoded = bpe.decode(tokens).unwrap();
+    assert_eq!(decoded, text);
+}
+
+fn test_decode(bpe: &CoreBPE, text: &str, exected_tokens: Vec<usize>) {
+    let tokens = bpe.encode_with_special_tokens(text);
+    assert_eq!(tokens, exected_tokens,);
+}
 #[test]
 fn p50k_base_test() {
     let bpe = p50k_base().unwrap();
-    let tokens = bpe.encode_with_special_tokens("This is a test         with a lot of spaces");
-    let decoded = bpe.decode(tokens.clone()).unwrap();
-    assert_eq!(decoded, "This is a test         with a lot of spaces");
-    assert_eq!(
-        tokens,
-        vec![1212, 318, 257, 1332, 50263, 351, 257, 1256, 286, 9029]
+    test_roundtrip(&bpe, "This is a test         with a lot of spaces");
+    test_decode(
+        &bpe,
+        "This is a test         with a lot of spaces",
+        vec![1212, 318, 257, 1332, 50263, 351, 257, 1256, 286, 9029],
+    );
+    test_decode(
+        &bpe,
+        "This is a test         with a lot of spaces<|endoftext|>",
+        vec![
+            1212, 318, 257, 1332, 50263, 351, 257, 1256, 286, 9029, 50281,
+        ],
     );
 }
 
 #[test]
 fn r50k_base_test() {
     let bpe = r50k_base().unwrap();
-    let tokens = bpe.encode_with_special_tokens("This is a test         with a lot of spaces");
-    let decoded = bpe.decode(tokens.clone()).unwrap();
-    assert_eq!(decoded, "This is a test         with a lot of spaces");
-    println!("{tokens:?}");
-    assert_eq!(
-        tokens,
+    test_roundtrip(&bpe, "This is a test         with a lot of spaces");
+    test_decode(
+        &bpe,
+        "This is a test         with a lot of spaces",
         vec![
-            1212, 318, 257, 1332, 220, 220, 220, 220, 220, 220, 220, 220, 351, 257, 1256, 286, 9029
-        ]
+            1212, 318, 257, 1332, 220, 220, 220, 220, 220, 220, 220, 220, 351, 257, 1256, 286, 9029,
+        ],
+    );
+    test_decode(
+        &bpe,
+        "This is a test         with a lot of spaces<|endoftext|>",
+        vec![
+            1212, 318, 257, 1332, 220, 220, 220, 220, 220, 220, 220, 220, 351, 257, 1256, 286,
+            9029, 50256,
+        ],
+    );
+}
+
+#[test]
+fn cl100k_base_test() {
+    let bpe = cl100k_base().unwrap();
+    test_roundtrip(&bpe, "This is a test         with a lot of spaces");
+    test_decode(
+        &bpe,
+        "This is a test         with a lot of spaces",
+        vec![2028, 374, 264, 1296, 260, 449, 264, 2763, 315, 12908],
+    );
+    test_decode(
+        &bpe,
+        "This is a test         with a lot of spaces<|endoftext|>",
+        vec![
+            2028, 374, 264, 1296, 260, 449, 264, 2763, 315, 12908, 100256,
+        ],
     );
 }
 

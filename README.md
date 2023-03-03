@@ -27,11 +27,25 @@ let tokens = bpe.encode_with_special_tokens("This is an example");
 println!("Token count: {}", tokens.len());
 ```
 
-See the examples in the repo for usecases.
+`tiktoken` supports three encodings used by OpenAI models:
+
+| Encoding name           | OpenAI models                                       |
+|-------------------------|-----------------------------------------------------|
+| `cl100k_base`           | ChatGPT models, `text-embedding-ada-002`            |
+| `p50k_base`             | Code models, `text-davinci-002`, `text-davinci-003` |
+| `r50k_base` (or `gpt2`) | GPT-3 models like `davinci`                         |
+
+
+See the [examples](./examples/) in the repo for use cases. For more context on the different tokenizers, see the [OpenAI Cookbook](https://github.com/openai/openai-cookbook/blob/66b988407d8d13cad5060a881dc8c892141f2d5c/examples/How_to_count_tokens_with_tiktoken.ipynb)
+
 
 ## Encountered any bugs?
 
 If you encounter any bugs or have any suggestions for improvements, please open an issue on the repository.
+
+## Acknowledgements
+
+- Thanks for @spolu for the original code, and `.tiktoken` files.
 
 ## License
 

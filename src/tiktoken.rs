@@ -10,41 +10,38 @@ use rustc_hash::FxHashMap as HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
 
+/// Initializes and returns a new instance of the r50k_base tokenizer (also known as `gpt2`)
+/// Use for GPT-3 models like `davinci`
 pub fn r50k_base() -> Result<CoreBPE> {
-    let r50k_base = include_str!("r50k_base.tiktoken");
-
-    let mut encoder = HashMap::default();
-    for line in r50k_base.lines() {
-        let mut parts = line.split(' ');
-        let token = &general_purpose::STANDARD.decode(parts.next().unwrap())?;
-        let rank: usize = parts.next().unwrap().parse().unwrap();
-        encoder.insert(token.clone(), rank);
-    }
-
-    let mut special_tokens = HashMap::default();
-    special_tokens.insert(String::from("<|endoftext|>"), 50256);
-
-    CoreBPE::new(
-        encoder,
-        special_tokens,
-        "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+",
-    )
+    create_bpe(include_str!("r50k_base.tiktoken"))
 }
 
+/// Initializes and returns a new instance of the p50k_base tokenizer.
+/// Use for Code models, `text-davinci-002`, `text-davinci-003`
 pub fn p50k_base() -> Result<CoreBPE> {
-    let p50k_base = include_str!("p50k_base.tiktoken");
+    create_bpe(include_str!("p50k_base.tiktoken"))
+}
 
+/// Initializes and returns a new instance of the cl100k_base tokenizer.
+/// Use for ChatGPT models, `text-embedding-ada-002`
+pub fn cl100k_base() -> Result<CoreBPE> {
+    create_bpe(include_str!("cl100k_base.tiktoken"))
+}
+
+fn create_bpe(input_file: &'static str) -> Result<CoreBPE> {
     let mut encoder = HashMap::default();
-    for line in p50k_base.lines() {
+    let mut max_rank = 0usize;
+    for line in input_file.lines() {
         let mut parts = line.split(' ');
         let raw = parts.next().unwrap();
         let token = &general_purpose::STANDARD.decode(raw)?;
         let rank: usize = parts.next().unwrap().parse().unwrap();
         encoder.insert(token.clone(), rank);
+        max_rank = max_rank.max(rank);
     }
 
     let mut special_tokens = HashMap::default();
-    special_tokens.insert(String::from("<|endoftext|>"), 50256);
+    special_tokens.insert(String::from("<|endoftext|>"), max_rank + 1);
 
     CoreBPE::new(
         encoder,
@@ -53,6 +50,10 @@ pub fn p50k_base() -> Result<CoreBPE> {
     )
 }
 
+/// Returns a singleton instance of the r50k_base tokenizer. (also known as `gpt2`)
+/// Use for GPT-3 models like `davinci`
+///
+/// This function will only initialize the tokenizer once, and then return a reference the tokenizer
 pub fn r50k_base_singleton() -> Arc<Mutex<CoreBPE>> {
     lazy_static! {
         static ref R50K_BASE: Arc<Mutex<CoreBPE>> = Arc::new(Mutex::new(r50k_base().unwrap()));
@@ -60,11 +61,26 @@ pub fn r50k_base_singleton() -> Arc<Mutex<CoreBPE>> {
     R50K_BASE.clone()
 }
 
+/// Returns a singleton instance of the p50k_base tokenizer.
+/// Use for Code models, `text-davinci-002`, `text-davinci-003`
+///
+/// This function will only initialize the tokenizer once, and then return a reference the tokenizer.
 pub fn p50k_base_singleton() -> Arc<Mutex<CoreBPE>> {
     lazy_static! {
         static ref P50K_BASE: Arc<Mutex<CoreBPE>> = Arc::new(Mutex::new(p50k_base().unwrap()));
     }
     P50K_BASE.clone()
+}
+
+/// Returns a singleton instance of the cl100k_base tokenizer.
+/// Use for ChatGPT models, `text-embedding-ada-002`
+///
+/// This function will only initialize the tokenizer once, and then return a reference the tokenizer
+pub fn cl100k_base_singleton() -> Arc<Mutex<CoreBPE>> {
+    lazy_static! {
+        static ref CL100K_BASE: Arc<Mutex<CoreBPE>> = Arc::new(Mutex::new(cl100k_base().unwrap()));
+    }
+    CL100K_BASE.clone()
 }
 
 fn _byte_pair_merge(piece: &[u8], ranks: &HashMap<Vec<u8>, usize>) -> Vec<std::ops::Range<usize>> {
