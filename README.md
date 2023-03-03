@@ -45,7 +45,7 @@ If you encounter any bugs or have any suggestions for improvements, please open 
 
 ## Acknowledgements
 
-- Thanks for @spolu for the original code, and `.tiktoken` files.
+- Thanks @spolu for the original code, and `.tiktoken` files.
 
 ## License
 
