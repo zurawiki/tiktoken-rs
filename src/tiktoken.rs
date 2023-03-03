@@ -10,43 +10,77 @@ use rustc_hash::FxHashMap as HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
 
-/// Initializes and returns a new instance of the r50k_base tokenizer (also known as `gpt2`)
 /// Use for GPT-3 models like `davinci`
+/// Initializes and returns a new instance of the r50k_base tokenizer (also known as `gpt2`)
 pub fn r50k_base() -> Result<CoreBPE> {
-    create_bpe(include_str!("r50k_base.tiktoken"))
-}
+    let r50k_base = include_str!("r50k_base.tiktoken");
 
-/// Initializes and returns a new instance of the p50k_base tokenizer.
-/// Use for Code models, `text-davinci-002`, `text-davinci-003`
-pub fn p50k_base() -> Result<CoreBPE> {
-    create_bpe(include_str!("p50k_base.tiktoken"))
-}
-
-/// Initializes and returns a new instance of the cl100k_base tokenizer.
-/// Use for ChatGPT models, `text-embedding-ada-002`
-pub fn cl100k_base() -> Result<CoreBPE> {
-    create_bpe(include_str!("cl100k_base.tiktoken"))
-}
-
-fn create_bpe(input_file: &'static str) -> Result<CoreBPE> {
     let mut encoder = HashMap::default();
-    let mut max_rank = 0usize;
-    for line in input_file.lines() {
+    for line in r50k_base.lines() {
         let mut parts = line.split(' ');
-        let raw = parts.next().unwrap();
-        let token = &general_purpose::STANDARD.decode(raw)?;
+        let token = &general_purpose::STANDARD.decode(parts.next().unwrap())?;
         let rank: usize = parts.next().unwrap().parse().unwrap();
         encoder.insert(token.clone(), rank);
-        max_rank = max_rank.max(rank);
     }
 
     let mut special_tokens = HashMap::default();
-    special_tokens.insert(String::from("<|endoftext|>"), max_rank + 1);
+    special_tokens.insert(String::from("<|endoftext|>"), 50256);
 
     CoreBPE::new(
         encoder,
         special_tokens,
         "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+",
+    )
+}
+
+/// Use for Code models, `text-davinci-002`, `text-davinci-003`
+/// Initializes and returns a new instance of the p50k_base tokenizer.
+pub fn p50k_base() -> Result<CoreBPE> {
+    let p50k_base = include_str!("p50k_base.tiktoken");
+
+    let mut encoder = HashMap::default();
+    for line in p50k_base.lines() {
+        let mut parts = line.split(' ');
+        let raw = parts.next().unwrap();
+        let token = &general_purpose::STANDARD.decode(raw)?;
+        let rank: usize = parts.next().unwrap().parse().unwrap();
+        encoder.insert(token.clone(), rank);
+    }
+
+    let mut special_tokens = HashMap::default();
+    special_tokens.insert(String::from("<|endoftext|>"), 50256);
+
+    CoreBPE::new(
+        encoder,
+        special_tokens,
+        "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+",
+    )
+}
+/// Use for ChatGPT models, `text-embedding-ada-002`
+/// Initializes and returns a new instance of the cl100k_base tokenizer.
+pub fn cl100k_base() -> Result<CoreBPE> {
+    let cl100k_base = include_str!("cl100k_base.tiktoken");
+
+    let mut encoder = HashMap::default();
+    for line in cl100k_base.lines() {
+        let mut parts = line.split(' ');
+        let raw = parts.next().unwrap();
+        let token = &general_purpose::STANDARD.decode(raw)?;
+        let rank: usize = parts.next().unwrap().parse().unwrap();
+        encoder.insert(token.clone(), rank);
+    }
+
+    let mut special_tokens = HashMap::default();
+    special_tokens.insert(String::from("<|endoftext|>"), 100257);
+    special_tokens.insert(String::from("<|fim_prefix|>"), 100258);
+    special_tokens.insert(String::from("<|fim_middle|>"), 100259);
+    special_tokens.insert(String::from("<|fim_suffix|>"), 100260);
+    special_tokens.insert(String::from("<|endofprompt|>"), 100276);
+
+    CoreBPE::new(
+        encoder,
+        special_tokens,
+        "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+",
     )
 }
 
