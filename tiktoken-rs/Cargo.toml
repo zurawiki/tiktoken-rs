@@ -19,3 +19,4 @@ fancy-regex = "0.11.0"
 lazy_static = "1.4.0"
 parking_lot = "0.12.1"
 rustc-hash = "1.1.0"
+tiktoken = { path = "../vendor/tiktoken" }

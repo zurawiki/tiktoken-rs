@@ -2,4 +2,5 @@
 
 members = [
     "tiktoken-rs",
+    "vendor/tiktoken",
 ]
