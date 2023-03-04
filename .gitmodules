@@ -1,0 +1,3 @@
+[submodule "vendor/tiktoken"]
+	path = vendor/tiktoken
+	url = https://github.com/zurawiki/tiktoken
