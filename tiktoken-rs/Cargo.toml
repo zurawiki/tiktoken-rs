@@ -2,7 +2,7 @@
 name = "tiktoken-rs"
 version = "0.1.4"
 edition = "2021"
-rust-version = "1.67"
+rust-version = "1.57.0"
 authors = ["Roger Zurawicki <roger@zura.wiki>"]
 keywords = ["openai", "ai", "gpt", "bpe"]
 description = "output from a language model using standard input as the prompt"
