@@ -1,0 +1,21 @@
+[package]
+name = "tiktoken-rs"
+version = "0.1.4"
+edition = "2021"
+rust-version = "1.67"
+authors = ["Roger Zurawicki <roger@zura.wiki>"]
+keywords = ["openai", "ai", "gpt", "bpe"]
+description = "output from a language model using standard input as the prompt"
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/zurawiki/tiktoken-rs"
+repository = "https://github.com/zurawiki/tiktoken-rs"
+
+[dependencies]
+anyhow = "1.0.68"
+base64 = "0.21.0"
+bstr = "1.2.0"
+fancy-regex = "0.11.0"
+lazy_static = "1.4.0"
+parking_lot = "0.12.1"
+rustc-hash = "1.1.0"
