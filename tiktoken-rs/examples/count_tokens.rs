@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use tiktoken_rs::tiktoken::p50k_base;
+use tiktoken_rs::p50k_base;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let bpe = p50k_base().unwrap();

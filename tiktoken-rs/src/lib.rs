@@ -5,7 +5,7 @@ Rust library for tokenizing text for GPT using tiktoken
 ## Counting token length
 
 ```
-use tiktoken_rs::tiktoken::p50k_base;
+use tiktoken_rs::p50k_base;
 
 let bpe = p50k_base().unwrap();
 let tokens = bpe.encode_with_special_tokens(
@@ -18,6 +18,10 @@ println!("Token count: {}", tokens.len());
 For full working examples for all supported features see [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/examples) directory in the repository.
 
 */
+mod model;
+mod singleton;
+mod tiktoken_ext;
 
-/// Adaptation of the tiktoken crate for use in Rust projects
-pub mod tiktoken;
+pub use model::*;
+pub use singleton::*;
+pub use tiktoken_ext::openai_public::*;
