@@ -1,26 +1,24 @@
-const ENDOFTEXT: &str = "<|endoftext|>";
-const FIM_PREFIX: &str = "<|fim_prefix|>";
-const FIM_MIDDLE: &str = "<|fim_middle|>";
-const FIM_SUFFIX: &str = "<|fim_suffix|>";
-const ENDOFPROMPT: &str = "<|endofprompt|>";
+pub const ENDOFTEXT: &str = "<|endoftext|>";
+pub const FIM_PREFIX: &str = "<|fim_prefix|>";
+pub const FIM_MIDDLE: &str = "<|fim_middle|>";
+pub const FIM_SUFFIX: &str = "<|fim_suffix|>";
+pub const ENDOFPROMPT: &str = "<|endofprompt|>";
 
 /// Adaptation of the tiktoken crate for use in Rust projects
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
-use lazy_static::lazy_static;
-use parking_lot::Mutex;
+
 use rustc_hash::FxHashMap as HashMap;
 
-use std::sync::Arc;
 use tiktoken::CoreBPE;
 
 /// Use for GPT-3 models like `davinci`
 /// Initializes and returns a new instance of the r50k_base tokenizer (also known as `gpt2`)
 pub fn r50k_base() -> Result<CoreBPE> {
-    let r50k_base = include_str!("../../../assets/r50k_base.tiktoken");
+    let bpe_file = include_str!("../../../assets/r50k_base.tiktoken");
 
     let mut encoder = HashMap::default();
-    for line in r50k_base.lines() {
+    for line in bpe_file.lines() {
         let mut parts = line.split(' ');
         let token = &general_purpose::STANDARD.decode(parts.next().unwrap())?;
         let rank: usize = parts.next().unwrap().parse().unwrap();
@@ -41,10 +39,10 @@ pub fn r50k_base() -> Result<CoreBPE> {
 /// Use for Code models, `text-davinci-002`, `text-davinci-003`
 /// Initializes and returns a new instance of the p50k_base tokenizer.
 pub fn p50k_base() -> Result<CoreBPE> {
-    let p50k_base = include_str!("../../../assets/p50k_base.tiktoken");
+    let bpe_file = include_str!("../../../assets/p50k_base.tiktoken");
 
     let mut encoder = HashMap::default();
-    for line in p50k_base.lines() {
+    for line in bpe_file.lines() {
         let mut parts = line.split(' ');
         let raw = parts.next().unwrap();
         let token = &general_purpose::STANDARD.decode(raw)?;
@@ -62,6 +60,35 @@ pub fn p50k_base() -> Result<CoreBPE> {
     )?;
     Ok(bpe)
 }
+
+/// Use for edit models like `text-davinci-edit-001`, `code-davinci-edit-001`
+/// Initializes and returns a new instance of the p50k_base tokenizer.
+pub fn p50k_edit() -> Result<CoreBPE> {
+    let bpe_file = include_str!("../../../assets/p50k_base.tiktoken");
+
+    let mut encoder = HashMap::default();
+    for line in bpe_file.lines() {
+        let mut parts = line.split(' ');
+        let raw = parts.next().unwrap();
+        let token = &general_purpose::STANDARD.decode(raw)?;
+        let rank: usize = parts.next().unwrap().parse().unwrap();
+        encoder.insert(token.clone(), rank);
+    }
+
+    let mut special_tokens = HashMap::default();
+    special_tokens.insert(String::from(ENDOFTEXT), 50256);
+    special_tokens.insert(String::from(FIM_PREFIX), 50281);
+    special_tokens.insert(String::from(FIM_MIDDLE), 50282);
+    special_tokens.insert(String::from(FIM_SUFFIX), 50283);
+
+    let bpe = CoreBPE::new(
+        encoder,
+        special_tokens,
+        "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+",
+    )?;
+    Ok(bpe)
+}
+
 /// Use for ChatGPT models, `text-embedding-ada-002`
 /// Initializes and returns a new instance of the cl100k_base tokenizer.
 pub fn cl100k_base() -> Result<CoreBPE> {
@@ -89,37 +116,4 @@ pub fn cl100k_base() -> Result<CoreBPE> {
         "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+",
     )?;
     Ok(bpe)
-}
-
-/// Returns a singleton instance of the r50k_base tokenizer. (also known as `gpt2`)
-/// Use for GPT-3 models like `davinci`
-///
-/// This function will only initialize the tokenizer once, and then return a reference the tokenizer
-pub fn r50k_base_singleton() -> Arc<Mutex<CoreBPE>> {
-    lazy_static! {
-        static ref R50K_BASE: Arc<Mutex<CoreBPE>> = Arc::new(Mutex::new(r50k_base().unwrap()));
-    }
-    R50K_BASE.clone()
-}
-
-/// Returns a singleton instance of the p50k_base tokenizer.
-/// Use for Code models, `text-davinci-002`, `text-davinci-003`
-///
-/// This function will only initialize the tokenizer once, and then return a reference the tokenizer.
-pub fn p50k_base_singleton() -> Arc<Mutex<CoreBPE>> {
-    lazy_static! {
-        static ref P50K_BASE: Arc<Mutex<CoreBPE>> = Arc::new(Mutex::new(p50k_base().unwrap()));
-    }
-    P50K_BASE.clone()
-}
-
-/// Returns a singleton instance of the cl100k_base tokenizer.
-/// Use for ChatGPT models, `text-embedding-ada-002`
-///
-/// This function will only initialize the tokenizer once, and then return a reference the tokenizer
-pub fn cl100k_base_singleton() -> Arc<Mutex<CoreBPE>> {
-    lazy_static! {
-        static ref CL100K_BASE: Arc<Mutex<CoreBPE>> = Arc::new(Mutex::new(cl100k_base().unwrap()));
-    }
-    CL100K_BASE.clone()
 }
