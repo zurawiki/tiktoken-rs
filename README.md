@@ -33,6 +33,7 @@ println!("Token count: {}", tokens.len());
 |-------------------------|-----------------------------------------------------|
 | `cl100k_base`           | ChatGPT models, `text-embedding-ada-002`            |
 | `p50k_base`             | Code models, `text-davinci-002`, `text-davinci-003` |
+| `p50k_edit`             | Use for edit models like `text-davinci-edit-001`, `code-davinci-edit-001` |
 | `r50k_base` (or `gpt2`) | GPT-3 models like `davinci`                         |
 
 
