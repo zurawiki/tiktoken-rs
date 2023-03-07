@@ -3,7 +3,7 @@ use std::sync::Arc;
 use lazy_static::lazy_static;
 use parking_lot::Mutex;
 
-use tiktoken::CoreBPE;
+use crate::vendor_tiktoken::CoreBPE;
 
 use crate::{cl100k_base, p50k_base, p50k_edit, r50k_base};
 

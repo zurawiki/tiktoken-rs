@@ -1,15 +1,14 @@
 [package]
 name = "tiktoken-rs"
 version = "0.2.0"
-edition = "2021"
+description = "Library for encoding and decoding with the tiktoken library in Rust"
 rust-version = "1.57.0"
-authors = ["Roger Zurawicki <roger@zura.wiki>"]
-keywords = ["openai", "ai", "gpt", "bpe"]
-description = "output from a language model using standard input as the prompt"
-readme = "README.md"
-license = "MIT"
-homepage = "https://github.com/zurawiki/tiktoken-rs"
-repository = "https://github.com/zurawiki/tiktoken-rs"
+edition.workspace = true
+keywords.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
 
 [dependencies]
 anyhow = "1.0.68"
@@ -18,5 +17,5 @@ bstr = "1.2.0"
 fancy-regex = "0.11.0"
 lazy_static = "1.4.0"
 parking_lot = "0.12.1"
+pyo3 = "0.18.1"
 rustc-hash = "1.1.0"
-tiktoken = { path = "../vendor/tiktoken" }

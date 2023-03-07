@@ -10,7 +10,7 @@ use base64::{engine::general_purpose, Engine as _};
 
 use rustc_hash::FxHashMap as HashMap;
 
-use tiktoken::CoreBPE;
+use crate::vendor_tiktoken::CoreBPE;
 
 /// Use for GPT-3 models like `davinci`
 /// Initializes and returns a new instance of the r50k_base tokenizer (also known as `gpt2`)

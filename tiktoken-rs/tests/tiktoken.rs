@@ -1,7 +1,8 @@
 use rustc_hash::FxHashMap as HashMap;
 
-use tiktoken::{byte_pair_split, CoreBPE};
-use tiktoken_rs::{cl100k_base, p50k_base, p50k_base_singleton, r50k_base};
+use tiktoken_rs::{
+    byte_pair_split, cl100k_base, p50k_base, p50k_base_singleton, r50k_base, CoreBPE,
+};
 
 #[test]
 fn very_simple_test() {

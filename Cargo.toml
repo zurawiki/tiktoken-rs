@@ -1,6 +1,17 @@
 [workspace]
-
 members = [
     "tiktoken-rs",
-    "vendor/tiktoken",
 ]
+
+[workspace.package]
+edition = "2021"
+authors = ["Roger Zurawicki <roger@zura.wiki>"]
+description = "Library for encoding and decoding with the tiktoken library in Rust"
+rust-version = "1.57.0"
+keywords = ["openai", "ai", "gpt", "bpe"]
+readme = "./README.md"
+homepage = "https://github.com/zurawiki/tiktoken-rs"
+repository = "https://github.com/zurawiki/tiktoken-rs"
+license = "MIT"
+[profile.release]
+incremental = true

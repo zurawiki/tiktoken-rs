@@ -21,7 +21,9 @@ For full working examples for all supported features see [examples](https://gith
 mod model;
 mod singleton;
 mod tiktoken_ext;
+mod vendor_tiktoken;
 
 pub use model::*;
 pub use singleton::*;
 pub use tiktoken_ext::openai_public::*;
+pub use vendor_tiktoken::*;
