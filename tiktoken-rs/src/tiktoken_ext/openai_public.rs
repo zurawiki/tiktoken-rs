@@ -15,7 +15,7 @@ use crate::vendor_tiktoken::CoreBPE;
 /// Use for GPT-3 models like `davinci`
 /// Initializes and returns a new instance of the r50k_base tokenizer (also known as `gpt2`)
 pub fn r50k_base() -> Result<CoreBPE> {
-    let bpe_file = include_str!("../../../assets/r50k_base.tiktoken");
+    let bpe_file = include_str!("../../assets/r50k_base.tiktoken");
 
     let mut encoder = HashMap::default();
     for line in bpe_file.lines() {
@@ -39,7 +39,7 @@ pub fn r50k_base() -> Result<CoreBPE> {
 /// Use for Code models, `text-davinci-002`, `text-davinci-003`
 /// Initializes and returns a new instance of the p50k_base tokenizer.
 pub fn p50k_base() -> Result<CoreBPE> {
-    let bpe_file = include_str!("../../../assets/p50k_base.tiktoken");
+    let bpe_file = include_str!("../../assets/p50k_base.tiktoken");
 
     let mut encoder = HashMap::default();
     for line in bpe_file.lines() {
@@ -64,7 +64,7 @@ pub fn p50k_base() -> Result<CoreBPE> {
 /// Use for edit models like `text-davinci-edit-001`, `code-davinci-edit-001`
 /// Initializes and returns a new instance of the p50k_base tokenizer.
 pub fn p50k_edit() -> Result<CoreBPE> {
-    let bpe_file = include_str!("../../../assets/p50k_base.tiktoken");
+    let bpe_file = include_str!("../../assets/p50k_base.tiktoken");
 
     let mut encoder = HashMap::default();
     for line in bpe_file.lines() {
@@ -92,7 +92,7 @@ pub fn p50k_edit() -> Result<CoreBPE> {
 /// Use for ChatGPT models, `text-embedding-ada-002`
 /// Initializes and returns a new instance of the cl100k_base tokenizer.
 pub fn cl100k_base() -> Result<CoreBPE> {
-    let cl100k_base = include_str!("../../../assets/cl100k_base.tiktoken");
+    let cl100k_base = include_str!("../../assets/cl100k_base.tiktoken");
 
     let mut encoder = HashMap::default();
     for line in cl100k_base.lines() {
