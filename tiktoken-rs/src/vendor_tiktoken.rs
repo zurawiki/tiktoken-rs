@@ -7,11 +7,16 @@ use std::thread;
 use anyhow::anyhow;
 use anyhow::Result;
 use fancy_regex::Regex;
-use pyo3::exceptions;
-use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyList, PyTuple};
-use pyo3::PyResult;
 use rustc_hash::FxHashMap as HashMap;
+
+#[cfg(feature = "python")]
+use pyo3::exceptions;
+#[cfg(feature = "python")]
+use pyo3::prelude::*;
+#[cfg(feature = "python")]
+use pyo3::types::{PyBytes, PyList, PyTuple};
+#[cfg(feature = "python")]
+use pyo3::PyResult;
 
 fn _byte_pair_merge<T>(
     piece: &[u8],
@@ -180,8 +185,22 @@ fn hash_current_thread() -> usize {
 }
 
 const MAX_NUM_THREADS: usize = 128;
+#[cfg(feature = "python")]
 #[pyclass]
 #[derive(Clone)]
+pub struct CoreBPE {
+    encoder: HashMap<Vec<u8>, usize>,
+    special_tokens_encoder: HashMap<String, usize>,
+    decoder: HashMap<usize, Vec<u8>>,
+    special_tokens_decoder: HashMap<usize, Vec<u8>>,
+    regex_tls: Vec<Regex>,
+    special_regex_tls: Vec<Regex>,
+    sorted_token_bytes: Vec<Vec<u8>>,
+}
+
+#[cfg(not(feature = "python"))]
+#[derive(Clone)]
+#[allow(dead_code)] // sorted_token_bytes is used but is read only in python version
 pub struct CoreBPE {
     encoder: HashMap<Vec<u8>, usize>,
     special_tokens_encoder: HashMap<String, usize>,
@@ -450,6 +469,51 @@ impl CoreBPE {
     // Encoding
     // ====================
 
+    // This function a copy of the similar function in python API, but it return
+    // Rust's results and errors
+    #[cfg(not(feature = "python"))]
+    pub fn new(
+        encoder: HashMap<Vec<u8>, usize>,
+        special_tokens_encoder: HashMap<String, usize>,
+        pattern: &str,
+    ) -> Result<Self> {
+        let regex = Regex::new(pattern).map_err(|e| anyhow!(e.to_string()))?;
+
+        let special_regex = {
+            let _parts = special_tokens_encoder
+                .keys()
+                .map(|s| fancy_regex::escape(s))
+                .collect::<Vec<_>>();
+            Regex::new(&_parts.join("|")).map_err(|e| anyhow!(e.to_string()))?
+        };
+
+        let decoder: HashMap<usize, Vec<u8>> =
+            encoder.iter().map(|(k, v)| (*v, k.clone())).collect();
+
+        assert!(encoder.len() == decoder.len());
+
+        let special_tokens_decoder: HashMap<usize, Vec<u8>> = special_tokens_encoder
+            .iter()
+            .map(|(k, v)| (*v, k.as_bytes().to_vec()))
+            .collect();
+
+        // Clone because I don't know how to tell Rust I'm not going to change the map
+        let mut sorted_token_bytes: Vec<Vec<u8>> = encoder.keys().cloned().collect();
+        sorted_token_bytes.sort();
+
+        Ok(CoreBPE {
+            encoder,
+            special_tokens_encoder,
+            decoder,
+            special_tokens_decoder,
+            regex_tls: (0..MAX_NUM_THREADS).map(|_| regex.clone()).collect(),
+            special_regex_tls: (0..MAX_NUM_THREADS)
+                .map(|_| special_regex.clone())
+                .collect(),
+            sorted_token_bytes,
+        })
+    }
+
     pub fn encode_ordinary(&self, text: &str) -> Vec<usize> {
         self._encode_ordinary_native(text)
     }
@@ -479,6 +543,7 @@ impl CoreBPE {
     }
 }
 
+#[cfg(feature = "python")]
 #[pymethods]
 impl CoreBPE {
     #[new]
@@ -593,6 +658,7 @@ impl CoreBPE {
     }
 }
 
+#[cfg(feature = "python")]
 #[pymodule]
 fn _tiktoken(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<CoreBPE>()?;
