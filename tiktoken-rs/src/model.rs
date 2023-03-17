@@ -6,6 +6,8 @@ const MODEL_PREFIX_TO_ENCODING: &[(&str, &str)] = &[
 
 const MODEL_TO_ENCODING: &[(&str, &str)] = &[
     // chat
+    ("gpt-4-0314", "cl100k_base"),
+    ("gpt-4-32k-0314", "cl100k_base"),
     ("gpt-3.5-turbo", "cl100k_base"),
     // text
     ("text-davinci-003", "p50k_base"),
