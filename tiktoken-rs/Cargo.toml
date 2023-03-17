@@ -10,7 +10,6 @@ homepage.workspace = true
 repository.workspace = true
 license.workspace = true
 readme = "../README.md"
-docs = "https://docs.rs/tiktoken_rs"
 
 [dependencies]
 anyhow = "1.0.68"
