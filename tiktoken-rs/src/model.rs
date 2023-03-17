@@ -1,89 +1,59 @@
-const MODEL_PREFIX_TO_ENCODING: &[(&str, &str)] = &[
-    // chat
-    ("gpt-4-turbo-", "cl100k_base"), // e.g, gpt-4-0314, gpt-4-32k-0314,
-    ("gpt-3.5-turbo-", "cl100k_base"), // e.g, gpt-3.5-turbo-0301, -0401, etc.
-];
-
-const MODEL_TO_ENCODING: &[(&str, &str)] = &[
-    // chat
-    ("gpt-4-0314", "cl100k_base"),
-    ("gpt-4-32k-0314", "cl100k_base"),
-    ("gpt-3.5-turbo", "cl100k_base"),
-    // text
-    ("text-davinci-003", "p50k_base"),
-    ("text-davinci-002", "p50k_base"),
-    ("text-davinci-001", "r50k_base"),
-    ("text-curie-001", "r50k_base"),
-    ("text-babbage-001", "r50k_base"),
-    ("text-ada-001", "r50k_base"),
-    ("davinci", "r50k_base"),
-    ("curie", "r50k_base"),
-    ("babbage", "r50k_base"),
-    ("ada", "r50k_base"),
-    // code
-    ("code-davinci-002", "p50k_base"),
-    ("code-davinci-001", "p50k_base"),
-    ("code-cushman-002", "p50k_base"),
-    ("code-cushman-001", "p50k_base"),
-    ("davinci-codex", "p50k_base"),
-    ("cushman-codex", "p50k_base"),
-    // edit
-    ("text-davinci-edit-001", "p50k_edit"),
-    ("code-davinci-edit-001", "p50k_edit"),
-    // embeddings
-    ("text-embedding-ada-002", "cl100k_base"),
-    // old embeddings
-    ("text-similarity-davinci-001", "r50k_base"),
-    ("text-similarity-curie-001", "r50k_base"),
-    ("text-similarity-babbage-001", "r50k_base"),
-    ("text-similarity-ada-001", "r50k_base"),
-    ("text-search-davinci-doc-001", "r50k_base"),
-    ("text-search-curie-doc-001", "r50k_base"),
-    ("text-search-babbage-doc-001", "r50k_base"),
-    ("text-search-ada-doc-001", "r50k_base"),
-    ("code-search-babbage-code-001", "r50k_base"),
-    ("code-search-ada-code-001", "r50k_base"),
-    // open source
-    ("gpt2", "gpt2"),
-];
-
-/// Returns the encoding used by a model.
-///
-/// TODO use hashmap
-pub fn encoding_for_model(model_name: &str) -> Option<&str> {
-    if let Some(encoding) = MODEL_TO_ENCODING
-        .iter()
-        .find(|(model, _)| *model == model_name)
-    {
-        return Some(encoding.1);
-    }
-    if let Some(encoding) = MODEL_PREFIX_TO_ENCODING
-        .iter()
-        .find(|(model_prefix, _)| model_name.starts_with(*model_prefix))
-    {
-        return Some(encoding.1);
-    }
-
-    None
+/// Macro to check if a given str starts with any of the specified prefixes.
+macro_rules! starts_with_any {
+    ($str:expr, $($prefix:expr),* $(,)?) => {
+        false $(|| $str.starts_with($prefix))*
+    };
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_encoding_for_model() {
-        assert_eq!(encoding_for_model("gpt-4-32k-0314"), Some("cl100k_base"));
-        assert_eq!(encoding_for_model("gpt-3.5-turbo"), Some("cl100k_base"));
-        assert_eq!(
-            encoding_for_model("gpt-3.5-turbo-0301"),
-            Some("cl100k_base")
-        );
-        assert_eq!(encoding_for_model("text-davinci-003"), Some("p50k_base"));
-        assert_eq!(
-            encoding_for_model("code-search-ada-code-001"),
-            Some("r50k_base")
-        );
-        assert_eq!(encoding_for_model("foo"), None);
+/// Returns the context size of a specified model.
+///
+/// The context size represents the maximum number of tokens a model can process in a single input.
+/// This function checks the model name and returns the corresponding context size.
+/// See https://platform.openai.com/docs/models for up-to-date information.
+///
+/// # Arguments
+///
+/// * `model` - A string slice that holds the name of the model.
+///
+/// # Examples
+///
+/// ```
+/// use tiktoken_rs::model::get_context_size;
+/// let model = "gpt-4-32k";
+/// let context_size = get_context_size(model);
+/// assert_eq!(context_size, 32768);
+/// ```
+///
+/// # Panics
+///
+/// This function does not panic. It returns a default value of 4096 if the model is not recognized.
+pub fn get_context_size(model: &str) -> usize {
+    if starts_with_any!(model, "gpt-4-32k") {
+        return 32768;
     }
+    if starts_with_any!(model, "gpt-4") {
+        return 8192;
+    }
+    if starts_with_any!(model, "gpt-3.5-turbo") {
+        return 4096;
+    }
+    if starts_with_any!(model, "text-davinci-002", "text-davinci-003") {
+        return 4097;
+    }
+    if starts_with_any!(model, "ada", "babbage", "curie") {
+        return 2049;
+    }
+    if starts_with_any!(model, "code-cushman-001") {
+        return 2048;
+    }
+    if starts_with_any!(model, "code-davinci-002") {
+        return 8001;
+    }
+    if starts_with_any!(model, "davinci") {
+        return 2049;
+    }
+    if starts_with_any!(model, "text-ada-001", "text-babbage-001", "text-curie-001") {
+        return 2049;
+    }
+    4096
 }
