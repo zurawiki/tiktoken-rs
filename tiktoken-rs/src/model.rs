@@ -1,5 +1,6 @@
 const MODEL_PREFIX_TO_ENCODING: &[(&str, &str)] = &[
     // chat
+    ("gpt-4-turbo-", "cl100k_base"), // e.g, gpt-4-0314, gpt-4-32k-0314,
     ("gpt-3.5-turbo-", "cl100k_base"), // e.g, gpt-3.5-turbo-0301, -0401, etc.
 ];
 
@@ -70,6 +71,7 @@ mod tests {
 
     #[test]
     fn test_encoding_for_model() {
+        assert_eq!(encoding_for_model("gpt-4-32k-0314"), Some("cl100k_base"));
         assert_eq!(encoding_for_model("gpt-3.5-turbo"), Some("cl100k_base"));
         assert_eq!(
             encoding_for_model("gpt-3.5-turbo-0301"),
