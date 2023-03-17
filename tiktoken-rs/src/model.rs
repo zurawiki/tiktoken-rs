@@ -9,7 +9,7 @@ macro_rules! starts_with_any {
 ///
 /// The context size represents the maximum number of tokens a model can process in a single input.
 /// This function checks the model name and returns the corresponding context size.
-/// See https://platform.openai.com/docs/models for up-to-date information.
+/// See <https://platform.openai.com/docs/models> for up-to-date information.
 ///
 /// # Arguments
 ///

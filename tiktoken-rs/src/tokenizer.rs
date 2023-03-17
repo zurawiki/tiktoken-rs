@@ -2,6 +2,18 @@ use std::collections::HashMap;
 
 use lazy_static::lazy_static;
 
+/// Enum representing the available tokenizers for different OpenAI models.
+///
+/// This enum lists the possible tokenizer types that can be used for tokenizing text
+/// when working with various OpenAI models.
+///
+/// # Example
+///
+/// ```
+/// use tiktoken_rs::tokenizer::Tokenizer;
+///
+/// let tokenizer = Tokenizer::Cl100kBase;
+/// ```
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub enum Tokenizer {
     Cl100kBase,
