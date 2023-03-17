@@ -112,6 +112,34 @@ pub fn get_completion_max_tokens(model: &str, prompt: &str) -> Result<usize> {
 /// let max_tokens = get_chat_completion_max_tokens(model, &messages).unwrap();
 /// ```
 ///
+///
+/// # Example without builder
+///
+/// ```
+/// use tiktoken_rs::get_chat_completion_max_tokens;
+/// use async_openai::types::{ChatCompletionRequestMessage, Role};
+///
+/// let model = "gpt-3.5-turbo";
+/// let messages = vec![
+///     ChatCompletionRequestMessage {
+///         content: "You are a helpful assistant that only speaks French.".to_string(),
+///         role: Role::System,
+///         name: None,
+///     },
+///     ChatCompletionRequestMessage {
+///         content: "Hello, how are you?".to_string(),
+///         role: Role::User,
+///         name: None,
+///     },
+///     ChatCompletionRequestMessage {
+///         content: "Parlez-vous francais?".to_string(),
+///         role: Role::System,
+///         name: None,
+///     },
+/// ];
+/// let max_tokens = get_chat_completion_max_tokens(model, &messages).unwrap();
+/// ```
+///
 /// # Returns
 ///
 /// If successful, the function returns a `Result` containing the maximum number of tokens available for chat completion,
@@ -205,7 +233,7 @@ pub fn get_bpe_from_tokenizer(tokenizer: Tokenizer) -> Result<CoreBPE> {
 
 #[cfg(test)]
 mod tests {
-    use async_openai::{types::ChatCompletionRequestMessageArgs, types::Role};
+    use async_openai::types::Role;
 
     use super::*;
 
@@ -219,21 +247,21 @@ mod tests {
     fn test_get_chat_completion_max_tokens() {
         let model = "gpt-3.5-turbo";
         let messages = vec![
-            ChatCompletionRequestMessageArgs::default()
-                .content("You are a helpful assistant!")
-                .role(Role::System)
-                .build()
-                .unwrap(),
-            ChatCompletionRequestMessageArgs::default()
-                .content("Hello, how are you?")
-                .role(Role::User)
-                .build()
-                .unwrap(),
-            ChatCompletionRequestMessageArgs::default()
-                .content("I'm doing well, thank you! How can I help you today?")
-                .role(Role::System)
-                .build()
-                .unwrap(),
+            ChatCompletionRequestMessage {
+                content: "You are a helpful assistant that only speaks French.".to_string(),
+                role: Role::System,
+                name: None,
+            },
+            ChatCompletionRequestMessage {
+                content: "Hello, how are you?".to_string(),
+                role: Role::User,
+                name: None,
+            },
+            ChatCompletionRequestMessage {
+                content: "Parlez-vous francais?".to_string(),
+                role: Role::System,
+                name: None,
+            },
         ];
         let max_tokens = get_chat_completion_max_tokens(model, &messages).unwrap();
         assert!(max_tokens > 0);

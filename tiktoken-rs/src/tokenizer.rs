@@ -1,3 +1,7 @@
+/*!
+ * lists out the available tokenizers for different OpenAI models.
+ */
+
 use std::collections::HashMap;
 
 use lazy_static::lazy_static;

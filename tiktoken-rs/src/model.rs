@@ -1,3 +1,7 @@
+/*!
+ * contains information about OpenAI models.
+ */
+
 /// Macro to check if a given str starts with any of the specified prefixes.
 macro_rules! starts_with_any {
     ($str:expr, $($prefix:expr),* $(,)?) => {
