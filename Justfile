@@ -41,7 +41,7 @@ version level:
     git diff-index --exit-code HEAD > /dev/null || ! echo You have untracked changes. Commit your changes before bumping the version.
     cargo set-version --bump {{level}}
     cargo update # This bumps Cargo.lock
-    VERSION=$(toml get Cargo.toml package.version) && \
+    VERSION=$(toml get tiktoken-rs/Cargo.toml package.version) && \
         git commit -am "Bump version {{level}} to $VERSION" && \
         git push origin HEAD
     git push
