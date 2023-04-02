@@ -40,7 +40,7 @@ let tokens = bpe.encode_with_special_tokens(
 println!("Token count: {}", tokens.len());
 ```
 
-## Counting max_tokens for a chat completion request
+## Counting max_tokens parameter for a chat completion request
 
 ```rust
 use tiktoken_rs::get_chat_completion_max_tokens;
