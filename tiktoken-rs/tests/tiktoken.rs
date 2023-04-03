@@ -14,16 +14,19 @@ fn very_simple_test() {
     assert_eq!(res, vec![b"ab", b"cd"]);
 }
 
+#[test]
 fn test_roundtrip(bpe: &CoreBPE, text: &str) {
     let tokens = bpe.encode_with_special_tokens(text);
     let decoded = bpe.decode(tokens).unwrap();
     assert_eq!(decoded, text);
 }
 
+#[test]
 fn test_decode(bpe: &CoreBPE, text: &str, exected_tokens: Vec<usize>) {
     let tokens = bpe.encode_with_special_tokens(text);
     assert_eq!(tokens, exected_tokens,);
 }
+
 #[test]
 fn p50k_base_test() {
     let bpe = p50k_base().unwrap();

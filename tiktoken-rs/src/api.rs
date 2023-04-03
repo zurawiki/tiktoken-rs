@@ -3,30 +3,11 @@ use async_openai::types::ChatCompletionRequestMessage;
 
 use crate::{
     cl100k_base,
-    model::get_context_size,
-    p50k_base, p50k_edit, r50k_base,
-    tokenizer::{get_tokenizer, Tokenizer},
     CoreBPE,
+    model::get_context_size, p50k_base, p50k_edit,
+    r50k_base,
+    tokenizer::{get_tokenizer, Tokenizer},
 };
-
-fn num_tokens_from_messages(messages: &[ChatCompletionRequestMessage], bpe: CoreBPE) -> usize {
-    let mut num_tokens = 0;
-    for message in messages {
-        num_tokens += 4; // every message follows <im_start>{role/name}\n{content}<im_end>\n
-
-        if let Some(name) = &message.name {
-            num_tokens += bpe.encode_with_special_tokens(name).len();
-            num_tokens -= 1; // role is always required and always 1 token
-        } else {
-            num_tokens += bpe
-                .encode_with_special_tokens(&format!("{}", message.role))
-                .len();
-        }
-        num_tokens += bpe.encode_with_special_tokens(&message.content).len();
-    }
-    num_tokens += 2; // every reply is primed with <im_start>assistant
-    num_tokens
-}
 
 /// Calculates the maximum number of tokens available for completion based on the model and prompt provided.
 ///
@@ -64,6 +45,39 @@ pub fn get_completion_max_tokens(model: &str, prompt: &str) -> Result<usize> {
     let bpe = get_bpe_from_model(model)?;
     let prompt_tokens = bpe.encode_with_special_tokens(prompt).len();
     Ok(context_size.saturating_sub(prompt_tokens))
+}
+
+/// Calculates the number of tokens for chat completion based on the model and messages provided.
+/// Based on https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+pub fn num_tokens_from_messages(model: &str, messages: &[ChatCompletionRequestMessage]) -> Result<usize> {
+    let tokenizer =
+        get_tokenizer(model).ok_or_else(|| anyhow!("No tokenizer found for model {}", model))?;
+    if tokenizer != Tokenizer::Cl100kBase {
+        bail!("Chat completion is only supported chat models")
+    }
+    let bpe = get_bpe_from_tokenizer(tokenizer)?;
+
+    let (tokens_per_message, tokens_per_name) = if model.starts_with("gpt-3.5") {
+        (
+            4, // every message follows <im_start>{role/name}\n{content}<im_end>\n
+            -1 // if there's a name, the role is omitted
+        )
+    } else {
+        (3, 1)
+    };
+
+    let mut num_tokens: i32 = 0;
+    for message in messages {
+        num_tokens += tokens_per_message;
+        num_tokens += bpe.encode_with_special_tokens(&message.role.to_string()).len() as i32;
+        num_tokens += bpe.encode_with_special_tokens(&message.content).len() as i32;
+        if let Some(name) = &message.name {
+            num_tokens += bpe.encode_with_special_tokens(name).len() as i32;
+            num_tokens += tokens_per_name;
+        }
+    }
+    num_tokens += 3; // every reply is primed with <|start|>assistant<|message|>
+    Ok(num_tokens as usize)
 }
 
 /// Calculates the maximum number of tokens available for chat completion based on the model and messages provided.
@@ -148,15 +162,8 @@ pub fn get_chat_completion_max_tokens(
     model: &str,
     messages: &[ChatCompletionRequestMessage],
 ) -> Result<usize> {
-    let tokenizer =
-        get_tokenizer(model).ok_or_else(|| anyhow!("No tokenizer found for model {}", model))?;
-    if tokenizer != Tokenizer::Cl100kBase {
-        bail!("Chat completion is only supported chat models")
-    }
-    let bpe = get_bpe_from_tokenizer(tokenizer)?;
-
     let context_size = get_context_size(model);
-    let prompt_tokens = num_tokens_from_messages(messages, bpe);
+    let prompt_tokens = num_tokens_from_messages(model, messages)?;
     Ok(context_size.saturating_sub(prompt_tokens))
 }
 
@@ -241,6 +248,45 @@ mod tests {
     fn test_get_bpe_from_tokenizer() {
         let bpe = get_bpe_from_tokenizer(Tokenizer::Cl100kBase).unwrap();
         assert_eq!(bpe.decode(vec!(15339)).unwrap(), "hello");
+    }
+
+    #[test]
+    fn test_num_tokens_from_messages() {
+        let model = "gpt-3.5-turbo";
+        let messages = vec![
+            ChatCompletionRequestMessage {
+                role: Role::System,
+                name: None,
+                content: "You are a helpful, pattern-following assistant that translates corporate jargon into plain English.".to_string(),
+            },
+            ChatCompletionRequestMessage {
+                role: Role::System,
+                name: Some("example_user".to_string()),
+                content: "New synergies will help drive top-line growth.".to_string(),
+            },
+            ChatCompletionRequestMessage {
+                role: Role::System,
+                name: Some("example_assistant".to_string()),
+                content: "Things working well together will increase revenue.".to_string(),
+            },
+            ChatCompletionRequestMessage {
+                role: Role::System,
+                name: Some("example_user".to_string()),
+                content: "Let's circle back when we have more bandwidth to touch base on opportunities for increased leverage.".to_string(),
+            },
+            ChatCompletionRequestMessage {
+                role: Role::System,
+                name: Some("example_assistant".to_string()),
+                content: "Let's talk later when we're less busy about how to do better.".to_string(),
+            },
+            ChatCompletionRequestMessage {
+                role: Role::User,
+                name: None,
+                content: "This late pivot means we don't have time to boil the ocean for the client deliverable.".to_string(),
+            },
+        ];
+        let num_tokens = num_tokens_from_messages(model, &messages).unwrap();
+        assert_eq!(num_tokens, 127);
     }
 
     #[test]
