@@ -3,10 +3,10 @@ use async_openai::types::ChatCompletionRequestMessage;
 
 use crate::{
     cl100k_base,
-    CoreBPE,
-    model::get_context_size, p50k_base, p50k_edit,
-    r50k_base,
+    model::get_context_size,
+    p50k_base, p50k_edit, r50k_base,
     tokenizer::{get_tokenizer, Tokenizer},
+    CoreBPE,
 };
 
 /// Calculates the maximum number of tokens available for completion based on the model and prompt provided.
@@ -49,7 +49,10 @@ pub fn get_completion_max_tokens(model: &str, prompt: &str) -> Result<usize> {
 
 /// Calculates the number of tokens for chat completion based on the model and messages provided.
 /// Based on https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
-pub fn num_tokens_from_messages(model: &str, messages: &[ChatCompletionRequestMessage]) -> Result<usize> {
+pub fn num_tokens_from_messages(
+    model: &str,
+    messages: &[ChatCompletionRequestMessage],
+) -> Result<usize> {
     let tokenizer =
         get_tokenizer(model).ok_or_else(|| anyhow!("No tokenizer found for model {}", model))?;
     if tokenizer != Tokenizer::Cl100kBase {
@@ -59,8 +62,8 @@ pub fn num_tokens_from_messages(model: &str, messages: &[ChatCompletionRequestMe
 
     let (tokens_per_message, tokens_per_name) = if model.starts_with("gpt-3.5") {
         (
-            4, // every message follows <im_start>{role/name}\n{content}<im_end>\n
-            -1 // if there's a name, the role is omitted
+            4,  // every message follows <im_start>{role/name}\n{content}<im_end>\n
+            -1, // if there's a name, the role is omitted
         )
     } else {
         (3, 1)
@@ -69,7 +72,9 @@ pub fn num_tokens_from_messages(model: &str, messages: &[ChatCompletionRequestMe
     let mut num_tokens: i32 = 0;
     for message in messages {
         num_tokens += tokens_per_message;
-        num_tokens += bpe.encode_with_special_tokens(&message.role.to_string()).len() as i32;
+        num_tokens += bpe
+            .encode_with_special_tokens(&message.role.to_string())
+            .len() as i32;
         num_tokens += bpe.encode_with_special_tokens(&message.content).len() as i32;
         if let Some(name) = &message.name {
             num_tokens += bpe.encode_with_special_tokens(name).len() as i32;
@@ -252,7 +257,6 @@ mod tests {
 
     #[test]
     fn test_num_tokens_from_messages() {
-        let model = "gpt-3.5-turbo";
         let messages = vec![
             ChatCompletionRequestMessage {
                 role: Role::System,
@@ -285,8 +289,11 @@ mod tests {
                 content: "This late pivot means we don't have time to boil the ocean for the client deliverable.".to_string(),
             },
         ];
-        let num_tokens = num_tokens_from_messages(model, &messages).unwrap();
+        let num_tokens = num_tokens_from_messages("gpt-3.5-turbo-0301", &messages).unwrap();
         assert_eq!(num_tokens, 127);
+
+        let num_tokens = num_tokens_from_messages("gpt-4-0314", &messages).unwrap();
+        assert_eq!(num_tokens, 129);
     }
 
     #[test]
