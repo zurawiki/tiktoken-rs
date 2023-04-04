@@ -24,6 +24,7 @@ fn test_decode(bpe: &CoreBPE, text: &str, exected_tokens: Vec<usize>) {
     let tokens = bpe.encode_with_special_tokens(text);
     assert_eq!(tokens, exected_tokens,);
 }
+
 #[test]
 fn p50k_base_test() {
     let bpe = p50k_base().unwrap();
