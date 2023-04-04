@@ -1,4 +1,5 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
+#[cfg(feature = "async-openai")]
 use async_openai::types::ChatCompletionRequestMessage;
 
 use crate::{
@@ -49,6 +50,7 @@ pub fn get_completion_max_tokens(model: &str, prompt: &str) -> Result<usize> {
 
 /// Calculates the number of tokens for chat completion based on the model and messages provided.
 /// Based on https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+#[cfg(feature = "async-openai")]
 pub fn num_tokens_from_messages(
     model: &str,
     messages: &[ChatCompletionRequestMessage],
@@ -56,7 +58,7 @@ pub fn num_tokens_from_messages(
     let tokenizer =
         get_tokenizer(model).ok_or_else(|| anyhow!("No tokenizer found for model {}", model))?;
     if tokenizer != Tokenizer::Cl100kBase {
-        bail!("Chat completion is only supported chat models")
+        anyhow::bail!("Chat completion is only supported chat models")
     }
     let bpe = get_bpe_from_tokenizer(tokenizer)?;
 
@@ -163,6 +165,7 @@ pub fn num_tokens_from_messages(
 ///
 /// If successful, the function returns a `Result` containing the maximum number of tokens available for chat completion,
 /// based on the given model and messages.
+#[cfg(feature = "async-openai")]
 pub fn get_chat_completion_max_tokens(
     model: &str,
     messages: &[ChatCompletionRequestMessage],
@@ -245,7 +248,8 @@ pub fn get_bpe_from_tokenizer(tokenizer: Tokenizer) -> Result<CoreBPE> {
 
 #[cfg(test)]
 mod tests {
-    use async_openai::types::Role;
+    #[cfg(feature = "async-openai")]
+    use async_openai::types::{ChatCompletionRequestMessage, Role};
 
     use super::*;
 
@@ -256,6 +260,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "async-openai")]
     fn test_num_tokens_from_messages() {
         let messages = vec![
             ChatCompletionRequestMessage {
@@ -297,6 +302,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "async-openai")]
     fn test_get_chat_completion_max_tokens() {
         let model = "gpt-3.5-turbo";
         let messages = vec![

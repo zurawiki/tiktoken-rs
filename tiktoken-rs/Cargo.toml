@@ -13,7 +13,7 @@ readme = "../README.md"
 
 [dependencies]
 anyhow = "1.0.70"
-async-openai = "0.10.0"
+async-openai = { version = "0.10.0", optional = true }
 base64 = "0.21.0"
 bstr = "1.4.0"
 fancy-regex = "0.11.0"
@@ -24,3 +24,4 @@ rustc-hash = "1.1.0"
 
 [features]
 python = ["dep:pyo3"] # build python bindings
+async-openai = ["dep:async-openai"]
