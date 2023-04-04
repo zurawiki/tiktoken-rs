@@ -4,6 +4,8 @@ mod singleton;
 mod tiktoken_ext;
 mod vendor_tiktoken;
 
+#[cfg(feature = "async-openai")]
+pub use api::async_openai_api::*;
 pub use api::*;
 pub mod model;
 pub mod tokenizer;
