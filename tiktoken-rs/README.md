@@ -16,7 +16,7 @@ This library is built on top of the `tiktoken` library and includes some additio
 
 # Examples
 
-For full working examples for all supported features, see the [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/examples) directory in the repository.
+For full working examples for all supported features, see the [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/tiktoken-rs/examples) directory in the repository.
 
 # Usage
 

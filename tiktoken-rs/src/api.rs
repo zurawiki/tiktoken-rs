@@ -56,8 +56,29 @@ pub struct ChatCompletionRequestMessage {
     pub name: Option<String>,
 }
 
-/// Calculates the number of tokens for chat completion based on the model and messages provided.
-/// Based on https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+/// Based on <https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb>
+///
+/// num_tokens_from_messages returns the number of tokens required to encode the given messages into
+/// the given model. This is used to estimate the number of tokens that will be used for chat
+/// completion.
+///
+/// # Arguments
+///
+/// * model: A string slice containing the model name (e.g. "gpt-3.5").
+/// * messages: A slice of ChatCompletionRequestMessage structs representing chat messages.
+///
+/// # Returns
+///
+/// * `Result<usize>`: A Result containing the total number of tokens needed to encode the messages
+/// for the specified model, or an error if the tokenizer for the model is not found or not supported.
+///
+/// # Errors
+///
+/// This function will return an error if:
+///
+/// * The tokenizer for the specified model is not found.
+/// * The tokenizer is not a supported chat model (i.e., not Tokenizer::Cl100kBase).
+///
 pub fn num_tokens_from_messages(
     model: &str,
     messages: &[ChatCompletionRequestMessage],
@@ -307,6 +328,7 @@ mod tests {
     }
 }
 
+/// This module provide support for working with the `async_openai` crate.
 #[cfg(feature = "async-openai")]
 pub mod async_openai {
     use anyhow::Result;
@@ -323,6 +345,16 @@ pub mod async_openai {
         }
     }
 
+    /// Calculates the total number of tokens for the given list of messages.
+    ///
+    /// # Arguments
+    ///
+    /// * `model` - A string slice representing the name of the model.
+    /// * `messages` - A slice of `async_openai::types::ChatCompletionRequestMessage` instances.
+    ///
+    /// # Returns
+    ///
+    /// * A `Result` containing the total number of tokens (`usize`) or an error if the calculation fails.
     pub fn num_tokens_from_messages(
         model: &str,
         messages: &[async_openai::types::ChatCompletionRequestMessage],
@@ -331,6 +363,16 @@ pub mod async_openai {
         super::num_tokens_from_messages(model, &messages)
     }
 
+    /// Retrieves the maximum token limit for chat completions.
+    ///
+    /// # Arguments
+    ///
+    /// * `model` - A string slice representing the name of the model.
+    /// * `messages` - A slice of `async_openai::types::ChatCompletionRequestMessage` instances.
+    ///
+    /// # Returns
+    ///
+    /// * A `Result` containing the maximum number of tokens (`usize`) allowed for chat completions or an error if the retrieval fails.
     pub fn get_chat_completion_max_tokens(
         model: &str,
         messages: &[async_openai::types::ChatCompletionRequestMessage],
