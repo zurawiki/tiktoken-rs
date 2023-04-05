@@ -310,48 +310,43 @@ mod tests {
 #[cfg(feature = "async-openai")]
 pub mod async_openai {
     use anyhow::Result;
-    use async_openai::types::ChatCompletionRequestMessage;
 
-    pub fn num_tokens_from_messages(
-        model: &str,
-        messages: &[ChatCompletionRequestMessage],
-    ) -> Result<usize> {
-        let messages = messages
-            .iter()
-            .map(|m| super::ChatCompletionRequestMessage {
+    impl From<&async_openai::types::ChatCompletionRequestMessage>
+        for super::ChatCompletionRequestMessage
+    {
+        fn from(m: &async_openai::types::ChatCompletionRequestMessage) -> Self {
+            Self {
                 role: m.role.to_string(),
                 name: m.name.clone(),
                 content: m.content.clone(),
-            })
-            .collect::<Vec<_>>();
+            }
+        }
+    }
+
+    pub fn num_tokens_from_messages(
+        model: &str,
+        messages: &[async_openai::types::ChatCompletionRequestMessage],
+    ) -> Result<usize> {
+        let messages = messages.iter().map(|m| m.into()).collect::<Vec<_>>();
         super::num_tokens_from_messages(model, &messages)
     }
 
     pub fn get_chat_completion_max_tokens(
         model: &str,
-        messages: &[ChatCompletionRequestMessage],
+        messages: &[async_openai::types::ChatCompletionRequestMessage],
     ) -> Result<usize> {
-        let messages = messages
-            .iter()
-            .map(|m| super::ChatCompletionRequestMessage {
-                role: m.role.to_string(),
-                name: m.name.clone(),
-                content: m.content.clone(),
-            })
-            .collect::<Vec<_>>();
+        let messages = messages.iter().map(|m| m.into()).collect::<Vec<_>>();
         super::get_chat_completion_max_tokens(model, &messages)
     }
 
     #[cfg(test)]
     mod tests {
-        use async_openai::types::{ChatCompletionRequestMessage, Role};
-
         use super::*;
 
         #[test]
         fn test_num_tokens_from_messages() {
-            let messages = &[ChatCompletionRequestMessage {
-                role: Role::System,
+            let messages = &[async_openai::types::ChatCompletionRequestMessage {
+                role: async_openai::types::Role::System,
                 name: None,
                 content: "You are a helpful, pattern-following assistant that translates corporate jargon into plain English.".to_string(),
             }];
@@ -362,9 +357,9 @@ pub mod async_openai {
         #[test]
         fn test_get_chat_completion_max_tokens() {
             let model = "gpt-3.5-turbo";
-            let messages = &[ChatCompletionRequestMessage {
+            let messages = &[async_openai::types::ChatCompletionRequestMessage {
                 content: "You are a helpful assistant that only speaks French.".to_string(),
-                role: Role::System,
+                role: async_openai::types::Role::System,
                 name: None,
             }];
             let max_tokens = get_chat_completion_max_tokens(model, messages).unwrap();
