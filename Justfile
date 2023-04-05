@@ -22,7 +22,7 @@ install:
     cargo install --path .
 
 test *args:
-    cargo test
+    cargo test --all-features
 alias t := test
 
 lint:
