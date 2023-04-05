@@ -116,7 +116,7 @@ pub fn num_tokens_from_messages(
 /// # Example
 ///
 /// ```
-/// use tiktoken_rs::{get_chat_completion_max_tokens,ChatCompletionRequestMessage};
+/// use tiktoken_rs::{get_chat_completion_max_tokens, ChatCompletionRequestMessage};
 ///
 /// let model = "gpt-3.5-turbo";
 /// let messages = vec![
@@ -308,11 +308,11 @@ mod tests {
 }
 
 #[cfg(feature = "async-openai")]
-pub mod async_openai_api {
+pub mod async_openai {
     use anyhow::Result;
     use async_openai::types::ChatCompletionRequestMessage;
 
-    pub fn async_openai_num_tokens_from_messages(
+    pub fn num_tokens_from_messages(
         model: &str,
         messages: &[ChatCompletionRequestMessage],
     ) -> Result<usize> {
@@ -327,7 +327,7 @@ pub mod async_openai_api {
         super::num_tokens_from_messages(model, &messages)
     }
 
-    pub fn async_openai_get_chat_completion_max_tokens(
+    pub fn get_chat_completion_max_tokens(
         model: &str,
         messages: &[ChatCompletionRequestMessage],
     ) -> Result<usize> {
@@ -355,8 +355,7 @@ pub mod async_openai_api {
                 name: None,
                 content: "You are a helpful, pattern-following assistant that translates corporate jargon into plain English.".to_string(),
             }];
-            let num_tokens =
-                async_openai_num_tokens_from_messages("gpt-3.5-turbo-0301", messages).unwrap();
+            let num_tokens = num_tokens_from_messages("gpt-3.5-turbo-0301", messages).unwrap();
             assert!(num_tokens > 0);
         }
 
@@ -368,7 +367,7 @@ pub mod async_openai_api {
                 role: Role::System,
                 name: None,
             }];
-            let max_tokens = async_openai_get_chat_completion_max_tokens(model, messages).unwrap();
+            let max_tokens = get_chat_completion_max_tokens(model, messages).unwrap();
             assert!(max_tokens > 0);
         }
     }

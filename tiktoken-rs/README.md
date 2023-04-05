@@ -43,7 +43,7 @@ println!("Token count: {}", tokens.len());
 ## Counting max_tokens parameter for a chat completion request
 
 ```rust
-use tiktoken_rs::{get_chat_completion_max_tokens,ChatCompletionRequestMessage};
+use tiktoken_rs::{get_chat_completion_max_tokens, ChatCompletionRequestMessage};
 
 let messages = vec![
     ChatCompletionRequestMessage {
