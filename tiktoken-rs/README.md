@@ -68,6 +68,8 @@ println!("max_tokens: {}", max_tokens);
 
 ## Counting max_tokens parameter for a chat completion request with [async-openai](https://crates.io/crates/async-openai)
 
+Need to enable the `async-openai` feature in your `Cargo.toml` file.
+
 ```rust
 use tiktoken_rs::async_openai::get_chat_completion_max_tokens;
 use async_openai::types::{ChatCompletionRequestMessage, Role};
