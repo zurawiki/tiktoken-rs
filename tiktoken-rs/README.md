@@ -43,20 +43,53 @@ println!("Token count: {}", tokens.len());
 ## Counting max_tokens parameter for a chat completion request
 
 ```rust
-use tiktoken_rs::get_chat_completion_max_tokens;
-use async_openai::types::{ChatCompletionRequestMessageArgs, Role};
+use tiktoken_rs::{get_chat_completion_max_tokens, ChatCompletionRequestMessage};
 
 let messages = vec![
-    ChatCompletionRequestMessageArgs::default()
-        .content("You are a helpful assistant!")
-        .role(Role::System)
-        .build()
-        .unwrap(),
-    ChatCompletionRequestMessageArgs::default()
-        .content("Hello, how are you?")
-        .role(Role::User)
-        .build()
-        .unwrap(),
+    ChatCompletionRequestMessage {
+        content: "You are a helpful assistant that only speaks French.".to_string(),
+        role: "system".to_string(),
+        name: None,
+    },
+    ChatCompletionRequestMessage {
+        content: "Hello, how are you?".to_string(),
+        role: "user".to_string(),
+        name: None,
+    },
+    ChatCompletionRequestMessage {
+        content: "Parlez-vous francais?".to_string(),
+        role: "system".to_string(),
+        name: None,
+    },
+];
+let max_tokens = get_chat_completion_max_tokens("gpt-4", &messages).unwrap();
+println!("max_tokens: {}", max_tokens);
+```
+
+## Counting max_tokens parameter for a chat completion request with [async-openai](https://crates.io/crates/async-openai)
+
+Need to enable the `async-openai` feature in your `Cargo.toml` file.
+
+```rust
+use tiktoken_rs::async_openai::get_chat_completion_max_tokens;
+use async_openai::types::{ChatCompletionRequestMessage, Role};
+
+let messages = vec![
+    ChatCompletionRequestMessage {
+        content: "You are a helpful assistant that only speaks French.".to_string(),
+        role: Role::System,
+        name: None,
+    },
+    ChatCompletionRequestMessage {
+        content: "Hello, how are you?".to_string(),
+        role: Role::User,
+        name: None,
+    },
+    ChatCompletionRequestMessage {
+        content: "Parlez-vous francais?".to_string(),
+        role: Role::System,
+        name: None,
+    },
 ];
 let max_tokens = get_chat_completion_max_tokens("gpt-4", &messages).unwrap();
 println!("max_tokens: {}", max_tokens);

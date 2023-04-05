@@ -1,5 +1,4 @@
-use anyhow::{anyhow, bail, Result};
-use async_openai::types::ChatCompletionRequestMessage;
+use anyhow::{anyhow, Result};
 
 use crate::{
     cl100k_base,
@@ -47,6 +46,16 @@ pub fn get_completion_max_tokens(model: &str, prompt: &str) -> Result<usize> {
     Ok(context_size.saturating_sub(prompt_tokens))
 }
 
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct ChatCompletionRequestMessage {
+    /// The role of the author of this message.
+    pub role: String,
+    /// The contents of the message
+    pub content: String,
+    /// The name of the user in a multi-user chat
+    pub name: Option<String>,
+}
+
 /// Calculates the number of tokens for chat completion based on the model and messages provided.
 /// Based on https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
 pub fn num_tokens_from_messages(
@@ -56,7 +65,7 @@ pub fn num_tokens_from_messages(
     let tokenizer =
         get_tokenizer(model).ok_or_else(|| anyhow!("No tokenizer found for model {}", model))?;
     if tokenizer != Tokenizer::Cl100kBase {
-        bail!("Chat completion is only supported chat models")
+        anyhow::bail!("Chat completion is only supported chat models")
     }
     let bpe = get_bpe_from_tokenizer(tokenizer)?;
 
@@ -104,55 +113,26 @@ pub fn num_tokens_from_messages(
 /// * If chat completion is not supported for the specified model.
 /// * If there is a failure in creating a `CoreBPE` instance for the specified tokenizer.
 ///
-/// # Examples
+/// # Example
 ///
 /// ```
-/// use tiktoken_rs::get_chat_completion_max_tokens;
-/// use async_openai::types::{ChatCompletionRequestMessageArgs, Role};
-///
-/// let model = "gpt-3.5-turbo";
-/// let messages = vec![
-///     ChatCompletionRequestMessageArgs::default()
-///         .content("You are a helpful assistant that only speaks French.")
-///         .role(Role::System)
-///         .build()
-///         .unwrap(),
-///     ChatCompletionRequestMessageArgs::default()
-///         .content("Hello, how are you?")
-///         .role(Role::User)
-///         .build()
-///         .unwrap(),
-///     ChatCompletionRequestMessageArgs::default()
-///         .content("Parlez-vous francais?")
-///         .role(Role::System)
-///         .build()
-///         .unwrap(),
-/// ];
-/// let max_tokens = get_chat_completion_max_tokens(model, &messages).unwrap();
-/// ```
-///
-///
-/// # Example without builder
-///
-/// ```
-/// use tiktoken_rs::get_chat_completion_max_tokens;
-/// use async_openai::types::{ChatCompletionRequestMessage, Role};
+/// use tiktoken_rs::{get_chat_completion_max_tokens, ChatCompletionRequestMessage};
 ///
 /// let model = "gpt-3.5-turbo";
 /// let messages = vec![
 ///     ChatCompletionRequestMessage {
 ///         content: "You are a helpful assistant that only speaks French.".to_string(),
-///         role: Role::System,
+///         role: "system".to_string(),
 ///         name: None,
 ///     },
 ///     ChatCompletionRequestMessage {
 ///         content: "Hello, how are you?".to_string(),
-///         role: Role::User,
+///         role: "user".to_string(),
 ///         name: None,
 ///     },
 ///     ChatCompletionRequestMessage {
 ///         content: "Parlez-vous francais?".to_string(),
-///         role: Role::System,
+///         role: "system".to_string(),
 ///         name: None,
 ///     },
 /// ];
@@ -245,8 +225,6 @@ pub fn get_bpe_from_tokenizer(tokenizer: Tokenizer) -> Result<CoreBPE> {
 
 #[cfg(test)]
 mod tests {
-    use async_openai::types::Role;
-
     use super::*;
 
     #[test]
@@ -259,32 +237,32 @@ mod tests {
     fn test_num_tokens_from_messages() {
         let messages = vec![
             ChatCompletionRequestMessage {
-                role: Role::System,
+                role: "system".to_string(),
                 name: None,
                 content: "You are a helpful, pattern-following assistant that translates corporate jargon into plain English.".to_string(),
             },
             ChatCompletionRequestMessage {
-                role: Role::System,
+                role: "system".to_string(),
                 name: Some("example_user".to_string()),
                 content: "New synergies will help drive top-line growth.".to_string(),
             },
             ChatCompletionRequestMessage {
-                role: Role::System,
+                role: "system".to_string(),
                 name: Some("example_assistant".to_string()),
                 content: "Things working well together will increase revenue.".to_string(),
             },
             ChatCompletionRequestMessage {
-                role: Role::System,
+                role: "system".to_string(),
                 name: Some("example_user".to_string()),
                 content: "Let's circle back when we have more bandwidth to touch base on opportunities for increased leverage.".to_string(),
             },
             ChatCompletionRequestMessage {
-                role: Role::System,
+                role: "system".to_string(),
                 name: Some("example_assistant".to_string()),
                 content: "Let's talk later when we're less busy about how to do better.".to_string(),
             },
             ChatCompletionRequestMessage {
-                role: Role::User,
+                role: "user".to_string(),
                 name: None,
                 content: "This late pivot means we don't have time to boil the ocean for the client deliverable.".to_string(),
             },
@@ -302,17 +280,17 @@ mod tests {
         let messages = vec![
             ChatCompletionRequestMessage {
                 content: "You are a helpful assistant that only speaks French.".to_string(),
-                role: Role::System,
+                role: "system".to_string(),
                 name: None,
             },
             ChatCompletionRequestMessage {
                 content: "Hello, how are you?".to_string(),
-                role: Role::User,
+                role: "user".to_string(),
                 name: None,
             },
             ChatCompletionRequestMessage {
                 content: "Parlez-vous francais?".to_string(),
-                role: Role::System,
+                role: "system".to_string(),
                 name: None,
             },
         ];
@@ -326,5 +304,66 @@ mod tests {
         let prompt = "Translate the following English text to French: '";
         let max_tokens = get_completion_max_tokens(model, prompt).unwrap();
         assert!(max_tokens > 0);
+    }
+}
+
+#[cfg(feature = "async-openai")]
+pub mod async_openai {
+    use anyhow::Result;
+
+    impl From<&async_openai::types::ChatCompletionRequestMessage>
+        for super::ChatCompletionRequestMessage
+    {
+        fn from(m: &async_openai::types::ChatCompletionRequestMessage) -> Self {
+            Self {
+                role: m.role.to_string(),
+                name: m.name.clone(),
+                content: m.content.clone(),
+            }
+        }
+    }
+
+    pub fn num_tokens_from_messages(
+        model: &str,
+        messages: &[async_openai::types::ChatCompletionRequestMessage],
+    ) -> Result<usize> {
+        let messages = messages.iter().map(|m| m.into()).collect::<Vec<_>>();
+        super::num_tokens_from_messages(model, &messages)
+    }
+
+    pub fn get_chat_completion_max_tokens(
+        model: &str,
+        messages: &[async_openai::types::ChatCompletionRequestMessage],
+    ) -> Result<usize> {
+        let messages = messages.iter().map(|m| m.into()).collect::<Vec<_>>();
+        super::get_chat_completion_max_tokens(model, &messages)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_num_tokens_from_messages() {
+            let messages = &[async_openai::types::ChatCompletionRequestMessage {
+                role: async_openai::types::Role::System,
+                name: None,
+                content: "You are a helpful, pattern-following assistant that translates corporate jargon into plain English.".to_string(),
+            }];
+            let num_tokens = num_tokens_from_messages("gpt-3.5-turbo-0301", messages).unwrap();
+            assert!(num_tokens > 0);
+        }
+
+        #[test]
+        fn test_get_chat_completion_max_tokens() {
+            let model = "gpt-3.5-turbo";
+            let messages = &[async_openai::types::ChatCompletionRequestMessage {
+                content: "You are a helpful assistant that only speaks French.".to_string(),
+                role: async_openai::types::Role::System,
+                name: None,
+            }];
+            let max_tokens = get_chat_completion_max_tokens(model, messages).unwrap();
+            assert!(max_tokens > 0);
+        }
     }
 }
