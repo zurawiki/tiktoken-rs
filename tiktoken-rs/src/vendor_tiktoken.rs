@@ -235,6 +235,18 @@ impl CoreBPE {
         ret
     }
 
+    fn _decode_native_and_split(&self, tokens: &[usize]) -> Vec<Vec<u8>> {
+        let mut ret = Vec::with_capacity(tokens.len());
+        for token in tokens {
+            let token_bytes = self
+                .decoder
+                .get(token)
+                .unwrap_or_else(|| &self.special_tokens_decoder[token]);
+            ret.push(token_bytes.clone());
+        }
+        ret
+    }
+
     fn _encode_ordinary_native(&self, text: &str) -> Vec<usize> {
         // This is the core of the encoding logic; the other functions in here
         // just make things complicated :-)
@@ -540,6 +552,20 @@ impl CoreBPE {
             Ok(text) => Ok(text),
             Err(e) => Err(anyhow!("Unable to decode into a valid UTF-8 string: {}", e)),
         }
+    }
+
+    // tokenize a string and return the decoded tokens using the correct BPE model
+    // for example: "Hello world" -> ["Hello", " world"]
+    pub fn split_by_token_with_special_tokens(&self, text: &str) -> Result<Vec<String>> {
+        // first, encode the text using the BPE model
+        let encoded = self.encode_with_special_tokens(text);
+
+        let tokenized = self._decode_native_and_split(&encoded);
+
+        tokenized
+            .iter()
+            .map(|token| String::from_utf8(token.clone()).map_err(|e| anyhow!(e.to_string())))
+            .collect()
     }
 }
 
