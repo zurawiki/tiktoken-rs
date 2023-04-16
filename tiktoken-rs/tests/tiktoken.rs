@@ -85,9 +85,10 @@ fn cl100k_base_test() {
 #[test]
 fn cl100k_split_test() {
     let bpe = cl100k_base().unwrap();
-    let tokenized = bpe
+    let tokenized: Result<Vec<_>, _> = bpe
         .split_by_token_with_special_tokens("This is a test         with a lot of spaces")
-        .unwrap();
+        .collect();
+    let tokenized = tokenized.unwrap();
     assert_eq!(
         tokenized,
         vec!["This", " is", " a", " test", "        ", " with", " a", " lot", " of", " spaces"]
