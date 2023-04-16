@@ -46,7 +46,7 @@ pub fn get_completion_max_tokens(model: &str, prompt: &str) -> Result<usize> {
     Ok(context_size.saturating_sub(prompt_tokens))
 }
 
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ChatCompletionRequestMessage {
     /// The role of the author of this message.
     pub role: String,
