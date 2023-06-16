@@ -22,17 +22,20 @@ install:
     cargo install --path .
 
 test *args:
-    cargo test --all-features
+    cargo test --all-features {{args}}
 alias t := test
+
+bench *args:
+    cargo +nightly bench {{args}}
 
 lint:
     cargo fmt --all -- --check
     cargo clippy --all-features --all-targets -- -D warnings --allow deprecated
 
 fix:
-    cargo fix --allow-dirty --allow-staged
-    cargo clippy --all-features --all-targets --fix --allow-dirty --allow-staged -- -D warnings --allow deprecated
-    cargo fmt --all
+    cargo +nightly fix --allow-dirty --allow-staged
+    cargo +nightly clippy --all-features --all-targets --fix --allow-dirty --allow-staged -- -D warnings --allow deprecated
+    cargo +nightly fmt --all
 alias f := fix
 
 

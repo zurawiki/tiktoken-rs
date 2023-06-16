@@ -33,10 +33,13 @@ macro_rules! starts_with_any {
 /// This function does not panic. It returns a default value of 4096 if the model is not recognized.
 pub fn get_context_size(model: &str) -> usize {
     if starts_with_any!(model, "gpt-4-32k") {
-        return 32768;
+        return 32_768;
     }
     if starts_with_any!(model, "gpt-4") {
         return 8192;
+    }
+    if starts_with_any!(model, "gpt-3.5-turbo-16k") {
+        return 16_384;
     }
     if starts_with_any!(model, "gpt-3.5-turbo") {
         return 4096;

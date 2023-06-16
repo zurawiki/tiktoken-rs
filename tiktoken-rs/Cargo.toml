@@ -3,6 +3,7 @@ name = "tiktoken-rs"
 version = "0.4.2"
 description = "Library for encoding and decoding with the tiktoken library in Rust"
 rust-version = "1.57.0"
+include = ["assets/**/*", "src/**/*"]
 edition.workspace = true
 keywords.workspace = true
 authors.workspace = true
