@@ -29,8 +29,8 @@ bench *args:
     cargo +nightly bench {{args}}
 
 lint:
-    cargo fmt --all -- --check
-    cargo clippy --all-features --all-targets -- -D warnings --allow deprecated
+    cargo +nightly fmt --all -- --check
+    cargo +nightly clippy --all-features --all-targets -- -D warnings --allow deprecated
 
 fix:
     cargo +nightly fix --allow-dirty --allow-staged
