@@ -12,6 +12,7 @@ keywords = ["openai", "ai", "gpt", "bpe"]
 readme = "./README.md"
 homepage = "https://github.com/zurawiki/tiktoken-rs"
 repository = "https://github.com/zurawiki/tiktoken-rs"
+documentation = "https://docs.rs/crate/tiktoken-rs/"
 license = "MIT"
 [profile.release]
 incremental = true
