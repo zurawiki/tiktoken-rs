@@ -121,3 +121,24 @@ fn p50k_base_singleton_test() {
     }
     // println!("p50k_base encode/decode 2: {:?}", now.elapsed());
 }
+
+#[test]
+fn test_unicode_encode() {
+    let bpe = r50k_base().unwrap();
+
+    let input = "🍌This is a sentence";
+    let tokenized = bpe.split_by_token(input, true).unwrap();
+    assert_eq!(tokenized.len(), 7);
+
+    let input = "你会说中文吗？";
+    let tokenized = bpe.split_by_token(input, true).unwrap();
+    assert_eq!(tokenized.len(), 14);
+}
+
+#[test]
+fn test_unicode_roundtrip() {
+    test_roundtrip(&cl100k_base().unwrap(), "🍌This is a sentence");
+    test_roundtrip(&p50k_base().unwrap(), "我想借几本汉语书");
+    test_roundtrip(&r50k_base().unwrap(), "我想借几本汉语书");
+    test_roundtrip(&cl100k_base().unwrap(), "你会说中文吗？");
+}
