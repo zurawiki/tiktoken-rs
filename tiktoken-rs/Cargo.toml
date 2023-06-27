@@ -25,6 +25,5 @@ pyo3 = { version = "0.19.0", optional = true }
 rustc-hash = "1.1.0"
 
 [features]
-default = ["async-openai"]
 python = ["dep:pyo3"] # build python bindings
 async-openai = ["dep:async-openai"]
