@@ -5,19 +5,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     let model = "gpt-4";
     let messages = vec![
         ChatCompletionRequestMessage {
-            content: "You are a helpful assistant that only speaks French.".to_string(),
+            content: Some("You are a helpful assistant that only speaks French.".to_string()),
             role: "system".to_string(),
             name: None,
+            function_call: None,
         },
         ChatCompletionRequestMessage {
-            content: "Hello, how are you?".to_string(),
+            content: Some("Hello, how are you?".to_string()),
             role: "user".to_string(),
             name: None,
+            function_call: None,
         },
         ChatCompletionRequestMessage {
-            content: "Parlez-vous francais?".to_string(),
+            content: Some("Parlez-vous francais?".to_string()),
             role: "system".to_string(),
             name: None,
+            function_call: None,
         },
     ];
     let max_tokens = get_chat_completion_max_tokens(model, &messages).unwrap();
