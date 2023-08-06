@@ -425,13 +425,14 @@ pub mod async_openai {
 
         #[test]
         fn test_num_tokens_from_messages() {
+            let model = "gpt-3.5-turbo-0301";
             let messages = &[async_openai::types::ChatCompletionRequestMessage {
                 role: async_openai::types::Role::System,
                 name: None,
                 content: Some("You are a helpful, pattern-following assistant that translates corporate jargon into plain English.".to_string()),
                 function_call: None,
             }];
-            let num_tokens = num_tokens_from_messages("gpt-3.5-turbo-0301", messages).unwrap();
+            let num_tokens = num_tokens_from_messages(model, messages).unwrap();
             assert!(num_tokens > 0);
         }
 
