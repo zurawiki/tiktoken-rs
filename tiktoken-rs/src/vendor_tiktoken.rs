@@ -199,7 +199,7 @@ pub struct CoreBPE {
 }
 
 #[cfg(not(feature = "python"))]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)] // sorted_token_bytes is used but is read only in python version
 pub struct CoreBPE {
     encoder: HashMap<Vec<u8>, usize>,
