@@ -2,7 +2,7 @@
 name = "tiktoken-rs"
 version = "0.5.1"
 description = "Library for encoding and decoding with the tiktoken library in Rust"
-rust-version = "1.57.0"
+rust-version = "1.72.0"
 include = ["assets/**/*", "src/**/*", "README.md"]
 edition.workspace = true
 keywords.workspace = true
@@ -14,14 +14,14 @@ license.workspace = true
 readme = "../README.md"
 
 [dependencies]
-anyhow = "1.0.71"
-async-openai = { version = "0.13.0", optional = true }
-base64 = "0.21.2"
-bstr = "1.5.0"
+anyhow = "1.0.75"
+async-openai = { version = "0.14.0", optional = true }
+base64 = "0.21.3"
+bstr = "0.2.17"
 fancy-regex = "0.11.0"
 lazy_static = "1.4.0"
 parking_lot = "0.12.1"
-pyo3 = { version = "0.19.0", optional = true }
+pyo3 = { version = "0.19.2", optional = true }
 rustc-hash = "1.1.0"
 
 [features]
