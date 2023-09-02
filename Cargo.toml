@@ -1,5 +1,5 @@
 [workspace]
-orkspace.resolver = "1"
+resolver = "1"
 members = [
     "tiktoken-rs",
 ]
