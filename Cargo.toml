@@ -2,6 +2,7 @@
 resolver = "1"
 members = [
     "tiktoken-rs",
+    "bindings/wrap"
 ]
 
 [workspace.package]

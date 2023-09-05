@@ -1,0 +1,9 @@
+format: 0.3.0
+project:
+  name: tiktoken
+  type: wasm/rust
+source:
+  module: ./Cargo.toml
+  schema: ./polywrap.graphql
+extensions:
+  build: ./polywrap.build.yaml

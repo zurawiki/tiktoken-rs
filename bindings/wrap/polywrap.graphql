@@ -1,0 +1,49 @@
+type Module {
+    ## model
+    getContextSize(model: String!): UInt!
+
+    ## tokenizer
+    getTokenizer(model: String!): Tokenizer
+
+    ## vendor_tiktoken createCustomBPE
+    createCustomBpe(
+        encoder: Map! @annotate(type: "Map<String!, UInt!>!"), # String is hex of bytes - [UInt8!]!
+        specialTokensEncoder: Map! @annotate(type: "Map<String!, UInt!>!"),
+        pattern: String!,
+    ): [UInt8!]!
+
+    ## vendor_tiktoken Encode
+    encodeOrdinary(tokenizer: Tokenizer!, text: String!, bpe: [UInt8!]): [UInt!]!
+    encode(tokenizer: Tokenizer!, text: String!, allowedSpecial: [String!]!, bpe: [UInt8!]): [UInt!]!
+    encodeWithSpecialTokens(tokenizer: Tokenizer!, text: String!, bpe: [UInt8!]): [UInt!]!
+
+    ## vendor_tiktoken Decode
+    decode(tokenizer: Tokenizer!, tokens: [UInt!]!, bpe: [UInt8!]): String!
+
+    ## vendor_tiktoken splitByToken
+    splitByToken(tokenizer: Tokenizer!, text: String!, useSpecialTokens: Boolean!, bpe: [UInt8!]): [String!]!
+
+    ## vendor_tiktoken splitByTokenOrdinary
+    splitByTokenOrdinary(tokenizer: Tokenizer!, text: String!, bpe: [UInt8!]): [String!]!
+
+    ## openai r50k_base
+    r50kBase: [UInt8!]!
+
+    ## openai p50k_base
+    p50kBase: [UInt8!]!
+
+    ## openai p50k_edit
+    p50kEdit: [UInt8!]!
+
+    ## openai cl100k_base
+    cl100kBase: [UInt8!]!
+}
+
+enum Tokenizer {
+    Cl100kBase,
+    P50kBase,
+    R50kBase,
+    P50kEdit,
+    Gpt2,  # Gpt 2 tokenizer is not supported yet by tiktoken-rs
+    Custom,
+}

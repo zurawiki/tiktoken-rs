@@ -1,0 +1,4 @@
+format: 0.2.0
+strategies:
+  image:
+    name: template-wasm-rs
