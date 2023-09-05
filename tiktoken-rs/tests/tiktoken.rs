@@ -26,6 +26,15 @@ fn test_decode(bpe: &CoreBPE, text: &str, exected_tokens: Vec<usize>) {
 }
 
 #[test]
+fn bpe_serde() {
+    let bpe = p50k_base().unwrap();
+    let serialized = rmp_serde::to_vec(&bpe).unwrap();
+    
+    let deserialized: CoreBPE = rmp_serde::from_slice(&serialized).unwrap();
+    assert_eq!(bpe, deserialized);
+}
+
+#[test]
 fn p50k_base_test() {
     let bpe = p50k_base().unwrap();
     test_roundtrip(&bpe, "This is a test         with a lot of spaces");

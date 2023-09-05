@@ -8,6 +8,9 @@ use anyhow::anyhow;
 use anyhow::Result;
 use fancy_regex::Regex;
 use rustc_hash::FxHashMap as HashMap;
+use serde::{Serialize, Deserialize, Serializer, Deserializer};
+use serde::ser::SerializeStruct;
+
 
 #[cfg(feature = "python")]
 use pyo3::exceptions;
@@ -209,6 +212,71 @@ pub struct CoreBPE {
     regex_tls: Vec<Regex>,
     special_regex_tls: Vec<Regex>,
     sorted_token_bytes: Vec<Vec<u8>>,
+}
+
+impl PartialEq for CoreBPE {
+    fn eq(&self, other: &Self) -> bool {
+        self.encoder == other.encoder
+            && self.special_tokens_encoder == other.special_tokens_encoder
+            && self.decoder == other.decoder
+            && self.special_tokens_decoder == other.special_tokens_decoder
+            && self.regex_tls.iter().map(|r| r.as_str()).collect::<Vec<_>>() == other.regex_tls.iter().map(|r| r.as_str()).collect::<Vec<_>>()
+            && self.special_regex_tls.iter().map(|r| r.as_str()).collect::<Vec<_>>() == other.special_regex_tls.iter().map(|r| r.as_str()).collect::<Vec<_>>()
+            && self.sorted_token_bytes == other.sorted_token_bytes
+    }
+}
+
+impl Serialize for CoreBPE {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let regex_strings: Vec<String> = self.regex_tls.iter().map(|r| r.as_str().to_string()).collect();
+        let special_regex_strings: Vec<String> = self.special_regex_tls.iter().map(|r| r.as_str().to_string()).collect();
+        
+        let mut state = serializer.serialize_struct("CoreBPE", 7)?;
+        state.serialize_field("encoder", &self.encoder)?;
+        state.serialize_field("special_tokens_encoder", &self.special_tokens_encoder)?;
+        state.serialize_field("decoder", &self.decoder)?;
+        state.serialize_field("special_tokens_decoder", &self.special_tokens_decoder)?;
+        state.serialize_field("regex_tls_str", &regex_strings)?;
+        state.serialize_field("special_regex_tls_str", &special_regex_strings)?;
+        state.serialize_field("sorted_token_bytes", &self.sorted_token_bytes)?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for CoreBPE {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct TempStruct {
+            encoder: HashMap<Vec<u8>, usize>,
+            special_tokens_encoder: HashMap<String, usize>,
+            decoder: HashMap<usize, Vec<u8>>,
+            special_tokens_decoder: HashMap<usize, Vec<u8>>,
+            regex_tls_str: Vec<String>,
+            special_regex_tls_str: Vec<String>,
+            sorted_token_bytes: Vec<Vec<u8>>,
+        }
+
+        let temp = TempStruct::deserialize(deserializer)?;
+
+        let regex_tls: Vec<Regex> = temp.regex_tls_str.iter().map(|s| Regex::new(s).unwrap()).collect();
+        let special_regex_tls: Vec<Regex> = temp.special_regex_tls_str.iter().map(|s| Regex::new(s).unwrap()).collect();
+
+        Ok(CoreBPE {
+            encoder: temp.encoder,
+            special_tokens_encoder: temp.special_tokens_encoder,
+            decoder: temp.decoder,
+            special_tokens_decoder: temp.special_tokens_decoder,
+            regex_tls,
+            special_regex_tls,
+            sorted_token_bytes: temp.sorted_token_bytes,
+        })
+    }
 }
 
 impl CoreBPE {
