@@ -2,7 +2,7 @@
 extern crate test;
 
 use tiktoken_rs::{cl100k_base, cl100k_base_singleton};
-static CONTENT: &str = r#"Hello world"#;
+static CONTENT: &str = "Hello world";
 
 #[bench]
 fn bench_cl100k_singleton_roundtrip(b: &mut test::Bencher) {
