@@ -62,5 +62,8 @@ pub fn get_context_size(model: &str) -> usize {
     if starts_with_any!(model, "text-ada-001", "text-babbage-001", "text-curie-001") {
         return 2049;
     }
+    if starts_with_any!(model, "text-embedding-ada-002") {
+        return 8192;
+    }
     4096
 }
