@@ -19,7 +19,7 @@ debug = 1
 
 [dependencies]
 anyhow = "1.0.75"
-async-openai = { version = "0.14.2", optional = true }
+async-openai = { version = "0.16.2", optional = true }
 base64 = "0.21.4"
 bstr = "1.6.2"
 dhat = { version = "0.3.2", optional = true }
