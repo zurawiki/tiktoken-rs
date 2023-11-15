@@ -2,11 +2,10 @@
 #![allow(clippy::borrow_deref_ref)]
 
 use std::collections::HashSet;
-use std::thread;
 
 use anyhow::anyhow;
 use anyhow::Result;
-use fancy_regex::Regex;
+use regex::Regex;
 use rustc_hash::FxHashMap as HashMap;
 
 #[cfg(feature = "python")]
@@ -168,23 +167,6 @@ pub fn byte_pair_split<'a>(piece: &'a [u8], ranks: &HashMap<Vec<u8>, usize>) -> 
 // The current implementation ends up doing a lot of hashing of bytes. In theory, this could be made
 // to be hashing of two-tuples of ints, which looks like it may also be a couple percent faster.
 
-use std::num::NonZeroU64;
-pub struct FakeThreadId(NonZeroU64);
-
-fn hash_current_thread() -> usize {
-    // It's easier to use unsafe than to use nightly. Rust has this nice u64 thread id counter
-    // that works great for our use case of avoiding collisions in our array. Unfortunately,
-    // it's private. However, there are only so many ways you can layout a u64, so just transmute
-    // https://github.com/rust-lang/rust/issues/67939
-    const _: [u8; 8] = [0; std::mem::size_of::<std::thread::ThreadId>()];
-    const _: [u8; 8] = [0; std::mem::size_of::<FakeThreadId>()];
-    let x = unsafe {
-        std::mem::transmute::<std::thread::ThreadId, FakeThreadId>(thread::current().id()).0
-    };
-    u64::from(x) as usize
-}
-
-const MAX_NUM_THREADS: usize = 128;
 #[cfg(feature = "python")]
 #[pyclass]
 #[derive(Clone)]
@@ -193,8 +175,8 @@ pub struct CoreBPE {
     special_tokens_encoder: HashMap<String, usize>,
     decoder: HashMap<usize, Vec<u8>>,
     special_tokens_decoder: HashMap<usize, Vec<u8>>,
-    regex_tls: Vec<Regex>,
-    special_regex_tls: Vec<Regex>,
+    regex: Regex,
+    special_regex: Regex,
     sorted_token_bytes: Vec<Vec<u8>>,
 }
 
@@ -206,23 +188,12 @@ pub struct CoreBPE {
     special_tokens_encoder: HashMap<String, usize>,
     decoder: HashMap<usize, Vec<u8>>,
     special_tokens_decoder: HashMap<usize, Vec<u8>>,
-    regex_tls: Vec<Regex>,
-    special_regex_tls: Vec<Regex>,
+    regex: Regex,
+    special_regex: Regex,
     sorted_token_bytes: Vec<Vec<u8>>,
 }
 
 impl CoreBPE {
-    fn _get_tl_regex(&self) -> &Regex {
-        // See performance notes above for what this is about
-        // It's also a little janky, please make a better version of it!
-        // However, it's nice that this doesn't leak memory to short-lived threads
-        &self.regex_tls[hash_current_thread() % MAX_NUM_THREADS]
-    }
-
-    fn _get_tl_special_regex(&self) -> &Regex {
-        &self.special_regex_tls[hash_current_thread() % MAX_NUM_THREADS]
-    }
-
     /// Given a list of tokens, return a vector of bytes
     ///
     /// The output is NOT guaranteed to be valid UTF-8
@@ -254,10 +225,9 @@ impl CoreBPE {
     fn _encode_ordinary_native(&self, text: &str) -> Vec<usize> {
         // This is the core of the encoding logic; the other functions in here
         // just make things complicated :-)
-        let regex = self._get_tl_regex();
         let mut ret = vec![];
-        for mat in regex.find_iter(text) {
-            let piece = mat.unwrap().as_str().as_bytes();
+        for mat in self.regex.find_iter(text) {
+            let piece = mat.as_str().as_bytes();
             if let Some(token) = self.encoder.get(piece) {
                 ret.push(*token);
                 continue;
@@ -268,8 +238,6 @@ impl CoreBPE {
     }
 
     fn _encode_native(&self, text: &str, allowed_special: &HashSet<&str>) -> (Vec<usize>, usize) {
-        let special_regex = self._get_tl_special_regex();
-        let regex = self._get_tl_regex();
         let mut ret = vec![];
 
         let mut start = 0;
@@ -279,7 +247,7 @@ impl CoreBPE {
             let mut start_find = start;
             loop {
                 // Find the next allowed special token, if any
-                next_special = special_regex.find_from_pos(text, start_find).unwrap();
+                next_special = self.special_regex.find_at(text, start_find);
                 match next_special {
                     Some(m) => {
                         if allowed_special.contains(&text[m.start()..m.end()]) {
@@ -293,8 +261,8 @@ impl CoreBPE {
             let end = next_special.map_or(text.len(), |m| m.start());
 
             // Okay, here we go, compare this logic to _encode_ordinary_native
-            for mat in regex.find_iter(&text[start..end]) {
-                let piece = mat.unwrap().as_str().as_bytes();
+            for mat in self.regex.find_iter(&text[start..end]) {
+                let piece = mat.as_str().as_bytes();
                 if let Some(token) = self.encoder.get(piece) {
                     last_piece_token_len = 1;
                     ret.push(*token);
@@ -493,12 +461,14 @@ impl CoreBPE {
         special_tokens_encoder: HashMap<String, usize>,
         pattern: &str,
     ) -> Result<Self> {
+        use regex::escape;
+
         let regex = Regex::new(pattern).map_err(|e| anyhow!(e.to_string()))?;
 
         let special_regex = {
             let _parts = special_tokens_encoder
                 .keys()
-                .map(|s| fancy_regex::escape(s))
+                .map(|s| escape(s))
                 .collect::<Vec<_>>();
             Regex::new(&_parts.join("|")).map_err(|e| anyhow!(e.to_string()))?
         };
@@ -522,10 +492,8 @@ impl CoreBPE {
             special_tokens_encoder,
             decoder,
             special_tokens_decoder,
-            regex_tls: (0..MAX_NUM_THREADS).map(|_| regex.clone()).collect(),
-            special_regex_tls: (0..MAX_NUM_THREADS)
-                .map(|_| special_regex.clone())
-                .collect(),
+            regex,
+            special_regex,
             sorted_token_bytes,
         })
     }
@@ -655,7 +623,7 @@ impl CoreBPE {
         let special_regex = {
             let _parts = special_tokens_encoder
                 .keys()
-                .map(|s| fancy_regex::escape(s))
+                .map(|s| regex::escape(s))
                 .collect::<Vec<_>>();
             Regex::new(&_parts.join("|"))
                 .map_err(|e| PyErr::new::<exceptions::PyValueError, _>(e.to_string()))?
@@ -680,10 +648,8 @@ impl CoreBPE {
             special_tokens_encoder,
             decoder,
             special_tokens_decoder,
-            regex_tls: (0..MAX_NUM_THREADS).map(|_| regex.clone()).collect(),
-            special_regex_tls: (0..MAX_NUM_THREADS)
-                .map(|_| special_regex.clone())
-                .collect(),
+            regex,
+            special_regex,
             sorted_token_bytes,
         })
     }

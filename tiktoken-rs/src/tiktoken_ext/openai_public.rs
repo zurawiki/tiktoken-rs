@@ -31,7 +31,7 @@ pub fn r50k_base() -> Result<CoreBPE> {
     let bpe = CoreBPE::new(
         encoder,
         special_tokens,
-        "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+",
+        "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+",
     )?;
     Ok(bpe)
 }
@@ -56,7 +56,7 @@ pub fn p50k_base() -> Result<CoreBPE> {
     let bpe = CoreBPE::new(
         encoder,
         special_tokens,
-        "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+",
+        "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+",
     )?;
     Ok(bpe)
 }
@@ -84,7 +84,7 @@ pub fn p50k_edit() -> Result<CoreBPE> {
     let bpe = CoreBPE::new(
         encoder,
         special_tokens,
-        "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+",
+        "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+",
     )?;
     Ok(bpe)
 }
@@ -113,7 +113,7 @@ pub fn cl100k_base() -> Result<CoreBPE> {
     let bpe = CoreBPE::new(
         encoder,
         special_tokens,
-        "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+",
+        "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+",
     )?;
     Ok(bpe)
 }
