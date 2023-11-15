@@ -15,12 +15,14 @@ readme = "../README.md"
 
 [profile.release]
 incremental = true
+debug = 1
 
 [dependencies]
 anyhow = "1.0.75"
 async-openai = { version = "0.14.2", optional = true }
 base64 = "0.21.4"
 bstr = "1.6.2"
+dhat = { version = "0.3.2", optional = true }
 fancy-regex = "0.11.0"
 lazy_static = "1.4.0"
 parking_lot = "0.12.1"
@@ -30,3 +32,4 @@ rustc-hash = "1.1.0"
 [features]
 python = ["dep:pyo3"] # build python bindings
 async-openai = ["dep:async-openai"]
+dhat-heap = ["dep:dhat"]

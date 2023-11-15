@@ -1,0 +1,489 @@
+#![deny(missing_docs)]
+#![deny(rustdoc::missing_doc_code_examples)]
+#![deny(missing_debug_implementations)]
+
+//! This crate provides heap profiling and [ad hoc profiling] capabilities to
+//! Rust programs, similar to those provided by [DHAT].
+//!
+//! [ad hoc profiling]: https://github.com/nnethercote/counts/#ad-hoc-profiling
+//! [DHAT]: https://www.valgrind.org/docs/manual/dh-manual.html
+//!
+//! The heap profiling works by using a global allocator that wraps the system
+//! allocator, tracks all heap allocations, and on program exit writes data to
+//! file so it can be viewed with DHAT's viewer. This corresponds to DHAT's
+//! `--mode=heap` mode.
+//!
+//! The ad hoc profiling is via a second mode of operation, where ad hoc events
+//! can be manually inserted into a Rust program for aggregation and viewing.
+//! This corresponds to DHAT's `--mode=ad-hoc` mode.
+//!
+//! `dhat` also supports *heap usage testing*, where you can write tests and
+//! then check that they allocated as much heap memory as you expected. This
+//! can be useful for performance-sensitive code.
+//!
+//! # Motivation
+//!
+//! DHAT is a powerful heap profiler that comes with Valgrind. This crate is a
+//! related but alternative choice for heap profiling Rust programs. DHAT and
+//! this crate have the following differences.
+//! - This crate works on any platform, while DHAT only works on some platforms
+//!   (Linux, mostly). (Note that DHAT's viewer is just HTML+JS+CSS and should
+//!   work in any modern web browser on any platform.)
+//! - This crate typically causes a smaller slowdown than DHAT.
+//! - This crate requires some modifications to a program's source code and
+//!   recompilation, while DHAT does not.
+//! - This crate cannot track memory accesses the way DHAT does, because it does
+//!   not instrument all memory loads and stores.
+//! - This crate does not provide profiling of copy functions such as `memcpy`
+//!   and `strcpy`, unlike DHAT.
+//! - The backtraces produced by this crate may be better than those produced
+//!   by DHAT.
+//! - DHAT measures a program's entire execution, but this crate only measures
+//!   what happens within `main`. It will miss the small number of allocations
+//!   that occur before or after `main`, within the Rust runtime.
+//! - This crate enables heap usage testing.
+//!
+//! # Configuration (profiling and testing)
+//!
+//! In your `Cargo.toml` file, as well as specifying `dhat` as a dependency,
+//! you should (a) enable source line debug info, and (b) create a feature or
+//! two that lets you easily switch profiling on and off:
+//! ```toml
+//! [profile.release]
+//! debug = 1
+//!
+//! [features]
+//! dhat-heap = []    # if you are doing heap profiling
+//! dhat-ad-hoc = []  # if you are doing ad hoc profiling
+//! ```
+//! You should only use `dhat` in release builds. Debug builds are too slow to
+//! be useful.
+//!
+//! # Setup (heap profiling)
+//!
+//! For heap profiling, enable the global allocator by adding this code to your
+//! program:
+//! ```
+//! # // Tricky: comment out the `cfg` so it shows up in docs but the following
+//! # // line is still tsted by `cargo test`.
+//! # /*
+//! #[cfg(feature = "dhat-heap")]
+//! # */
+//! #[global_allocator]
+//! static ALLOC: dhat::Alloc = dhat::Alloc;
+//! ```
+//! Then add the following code to the very start of your `main` function:
+//! ```
+//! # // Tricky: comment out the `cfg` so it shows up in docs but the following
+//! # // line is still tsted by `cargo test`.
+//! # /*
+//! #[cfg(feature = "dhat-heap")]
+//! # */
+//! let _profiler = dhat::Profiler::new_heap();
+//! ```
+//! Then run this command to enable heap profiling during the lifetime of the
+//! [`Profiler`] instance:
+//! ```text
+//! cargo run --features dhat-heap
+//! ```
+//! [`dhat::Alloc`](Alloc) is slower than the normal allocator, so it should
+//! only be enabled while profiling.
+//!
+//! # Setup (ad hoc profiling)
+//!
+//! [Ad hoc profiling] involves manually annotating hot code points and then
+//! aggregating the executed annotations in some fashion.
+//!
+//! [Ad hoc profiling]: https://github.com/nnethercote/counts/#ad-hoc-profiling
+//!
+//! To do this, add the following code to the very start of your `main`
+//! function:
+//!```
+//! # // Tricky: comment out the `cfg` so it shows up in docs but the following
+//! # // line is still tsted by `cargo test`.
+//! # /*
+//! #[cfg(feature = "dhat-ad-hoc")]
+//! # */
+//! let _profiler = dhat::Profiler::new_ad_hoc();
+//! ```
+//! Then insert calls like this at points of interest:
+//! ```
+//! # // Tricky: comment out the `cfg` so it shows up in docs but the following
+//! # // line is still tsted by `cargo test`.
+//! # /*
+//! #[cfg(feature = "dhat-ad-hoc")]
+//! # */
+//! dhat::ad_hoc_event(100);
+//! ```
+//! Then run this command to enable ad hoc profiling during the lifetime of the
+//! [`Profiler`] instance:
+//! ```text
+//! cargo run --features dhat-ad-hoc
+//! ```
+//! For example, imagine you have a hot function that is called from many call
+//! sites. You might want to know how often it is called and which other
+//! functions called it the most. In that case, you would add an
+//! [`ad_hoc_event`] call to that function, and the data collected by this
+//! crate and viewed with DHAT's viewer would show you exactly what you want to
+//! know.
+//!
+//! The meaning of the integer argument to `ad_hoc_event` will depend on
+//! exactly what you are measuring. If there is no meaningful weight to give to
+//! an event, you can just use `1`.
+//!
+//! # Running
+//!
+//! For both heap profiling and ad hoc profiling, the program will run more
+//! slowly than normal. The exact slowdown is hard to predict because it
+//! depends greatly on the program being profiled, but it can be large. (Even
+//! more so on Windows, because backtrace gathering can be drastically slower
+//! on Windows than on other platforms.)
+//!
+//! When the [`Profiler`] is dropped at the end of `main`, some basic
+//! information will be printed to `stderr`. For heap profiling it will look
+//! like the following.
+//! ```text
+//! dhat: Total:     1,256 bytes in 6 blocks
+//! dhat: At t-gmax: 1,256 bytes in 6 blocks
+//! dhat: At t-end:  1,256 bytes in 6 blocks
+//! dhat: The data has been saved to dhat-heap.json, and is viewable with dhat/dh_view.html
+//! ```
+//! ("Blocks" is a synonym for "allocations".)
+//!
+//! For ad hoc profiling it will look like the following.
+//! ```text
+//! dhat: Total:     141 units in 11 events
+//! dhat: The data has been saved to dhat-ad-hoc.json, and is viewable with dhat/dh_view.html
+//! ```
+//! A file called `dhat-heap.json` (for heap profiling) or `dhat-ad-hoc.json`
+//! (for ad hoc profiling) will be written. It can be viewed in DHAT's viewer.
+//!
+//! If you don't see this output, it may be because your program called
+//! [`std::process::exit`], which exits a program without running any
+//! destructors. To work around this, explicitly call `drop` on the
+//! [`Profiler`] value just before exiting.
+//!
+//! When doing heap profiling, if you unexpectedly see zero allocations in the
+//! output it may be because you forgot to set [`dhat::Alloc`](Alloc) as the
+//! global allocator.
+//!
+//! When doing heap profiling it is recommended that the lifetime of the
+//! [`Profiler`] value cover all of `main`. But it is still possible for
+//! allocations and deallocations to occur outside of its lifetime. Such cases
+//! are handled in the following ways.
+//! - Allocated before, untouched within: ignored.
+//! - Allocated before, freed within: ignored.
+//! - Allocated before, reallocated within: treated like a new allocation
+//!   within.
+//! - Allocated after: ignored.
+//!
+//! These cases are not ideal, but it is impossible to do better. `dhat`
+//! deliberately provides no way to reset the heap profiling state mid-run
+//! precisely because it leaves open the possibility of many such occurrences.
+//!
+//! # Viewing
+//!
+//! Open a copy of DHAT's viewer, version 3.17 or later. There are two ways to
+//! do this.
+//! - Easier: Use the [online version].
+//! - Harder: Clone the [Valgrind repository] with `git clone
+//!   git://sourceware.org/git/valgrind.git` and open `dhat/dh_view.html`.
+//!   There is no need to build any code in this repository.
+//!
+//! [online version]: https://nnethercote.github.io/dh_view/dh_view.html
+//! [Valgrind repository]: https://www.valgrind.org/downloads/repository.html
+//!
+//! Then click on the "Load…" button to load `dhat-heap.json` or
+//! `dhat-ad-hoc.json`.
+//!
+//! DHAT's viewer shows a tree with nodes that look like this.
+//! ```text
+//! PP 1.1/2 {
+//!   Total:     1,024 bytes (98.46%, 14,422,535.21/s) in 1 blocks (50%, 14,084.51/s), avg size 1,024 bytes, avg lifetime 35 µs (49.3% of program duration)
+//!   Max:       1,024 bytes in 1 blocks, avg size 1,024 bytes
+//!   At t-gmax: 1,024 bytes (98.46%) in 1 blocks (50%), avg size 1,024 bytes
+//!   At t-end:  1,024 bytes (100%) in 1 blocks (100%), avg size 1,024 bytes
+//!   Allocated at {
+//!     #1: 0x10ae8441b: <alloc::alloc::Global as core::alloc::Allocator>::allocate (alloc/src/alloc.rs:226:9)
+//!     #2: 0x10ae8441b: alloc::raw_vec::RawVec<T,A>::allocate_in (alloc/src/raw_vec.rs:207:45)
+//!     #3: 0x10ae8441b: alloc::raw_vec::RawVec<T,A>::with_capacity_in (alloc/src/raw_vec.rs:146:9)
+//!     #4: 0x10ae8441b: alloc::vec::Vec<T,A>::with_capacity_in (src/vec/mod.rs:609:20)
+//!     #5: 0x10ae8441b: alloc::vec::Vec<T>::with_capacity (src/vec/mod.rs:470:9)
+//!     #6: 0x10ae8441b: std::io::buffered::bufwriter::BufWriter<W>::with_capacity (io/buffered/bufwriter.rs:115:33)
+//!     #7: 0x10ae8441b: std::io::buffered::linewriter::LineWriter<W>::with_capacity (io/buffered/linewriter.rs:109:29)
+//!     #8: 0x10ae8441b: std::io::buffered::linewriter::LineWriter<W>::new (io/buffered/linewriter.rs:89:9)
+//!     #9: 0x10ae8441b: std::io::stdio::stdout::{{closure}} (src/io/stdio.rs:680:58)
+//!     #10: 0x10ae8441b: std::lazy::SyncOnceCell<T>::get_or_init_pin::{{closure}} (std/src/lazy.rs:375:25)
+//!     #11: 0x10ae8441b: std::sync::once::Once::call_once_force::{{closure}} (src/sync/once.rs:320:40)
+//!     #12: 0x10aea564c: std::sync::once::Once::call_inner (src/sync/once.rs:419:21)
+//!     #13: 0x10ae81b1b: std::sync::once::Once::call_once_force (src/sync/once.rs:320:9)
+//!     #14: 0x10ae81b1b: std::lazy::SyncOnceCell<T>::get_or_init_pin (std/src/lazy.rs:374:9)
+//!     #15: 0x10ae81b1b: std::io::stdio::stdout (src/io/stdio.rs:679:16)
+//!     #16: 0x10ae81b1b: std::io::stdio::print_to (src/io/stdio.rs:1196:21)
+//!     #17: 0x10ae81b1b: std::io::stdio::_print (src/io/stdio.rs:1209:5)
+//!     #18: 0x10ae2fe20: dhatter::main (dhatter/src/main.rs:8:5)
+//!   }
+//! }
+//! ```
+//! Full details about the output are in the [DHAT documentation]. Note that
+//! DHAT uses the word "block" as a synonym for "allocation".
+//!
+//! [DHAT documentation]: https://valgrind.org/docs/manual/dh-manual.html
+//!
+//! When heap profiling, this crate doesn't track memory accesses (unlike DHAT)
+//! and so the "reads" and "writes" measurements are not shown within DHAT's
+//! viewer, and "sort metric" views involving reads, writes, or accesses are
+//! not available.
+//!
+//! The backtraces produced by this crate are trimmed to reduce output file
+//! sizes and improve readability in DHAT's viewer, in the following ways.
+//! - Only one allocation-related frame will be shown at the top of the
+//!   backtrace. That frame may be a function within `alloc::alloc`, a function
+//!   within this crate, or a global allocation function like `__rg_alloc`.
+//! - Common frames at the bottom of all backtraces, below `main`, are omitted.
+//!
+//! Backtrace trimming is inexact and if the above heuristics fail more frames
+//! will be shown. [`ProfilerBuilder::trim_backtraces`] allows (approximate)
+//! control of how deep backtraces will be.
+//!
+//! # Heap usage testing
+//!
+//! `dhat` lets you write tests that check that a certain piece of code does a
+//! certain amount of heap allocation when it runs. This is sometimes called
+//! "high water mark" testing. Sometimes it is precise (e.g. "this code should
+//! do exactly 96 allocations" or "this code should free all allocations before
+//! finishing") and sometimes it is less precise (e.g. "the peak heap usage of
+//! this code should be less than 10 MiB").
+//!
+//! These tests are somewhat fragile, because heap profiling involves global
+//! state (allocation stats), which introduces complications.
+//! - `dhat` will panic if more than one `Profiler` is running at a time, but
+//!   Rust tests run in parallel by default. So parallel running of heap usage
+//!   tests must be prevented.
+//! - If you use something like the
+//!   [`serial_test`](https://docs.rs/serial_test/) crate to run heap usage
+//!   tests in serial, Rust's test runner code by default still runs in
+//!   parallel with those tests, and it allocates memory. These allocations
+//!   will be counted by the `Profiler` as if they are part of the test, which
+//!   will likely cause test failures.
+//!
+//! Therefore, the best approach is to put each heap usage test in its own
+//! integration test file. Each integration test runs in its own process, and
+//! so cannot interfere with any other test. Also, if there is only one test in
+//! an integration test file, Rust's test runner code does not use any
+//! parallelism, and so will not interfere with the test. If you do this, a
+//! simple `cargo test` will work as expected.
+//!
+//! Alternatively, if you really want multiple heap usage tests in a single
+//! integration test file you can write your own [custom test harness], which
+//! is simpler than it sounds.
+//!
+//! [custom test harness]: https://www.infinyon.com/blog/2021/04/rust-custom-test-harness/
+//!
+//! But integration tests have some limits. For example, they only be used to
+//! test items from libraries, not binaries. One way to get around this is to
+//! restructure things so that most of the functionality is in a library, and
+//! the binary is a thin wrapper around the library.
+//!
+//! Failing that, a blunt fallback is to run `cargo tests -- --test-threads=1`.
+//! This disables all parallelism in tests, avoiding all the problems. This
+//! allows the use of unit tests and multiples tests per integration test file,
+//! at the cost of a non-standard invocation and slower test execution.
+//!
+//! With all that in mind, configuration of `Cargo.toml` is much the same as
+//! for the profiling use case.
+//!
+//! Here is an example showing what is possible. This code would go in an
+//! integration test within a crate's `tests/` directory:
+//! ```
+//! #[global_allocator]
+//! static ALLOC: dhat::Alloc = dhat::Alloc;
+//!
+//! # // Tricky: comment out the `#[test]` because it's needed in an actual
+//! # // test but messes up things here.
+//! # /*
+//! #[test]
+//! # */
+//! fn test() {
+//!     let _profiler = dhat::Profiler::builder().testing().build();
+//!
+//!     let _v1 = vec![1, 2, 3, 4];
+//!     let v2 = vec![5, 6, 7, 8];
+//!     drop(v2);
+//!     let v3 = vec![9, 10, 11, 12];
+//!     drop(v3);
+//!
+//!     let stats = dhat::HeapStats::get();
+//!
+//!     // Three allocations were done in total.
+//!     dhat::assert_eq!(stats.total_blocks, 3);
+//!     dhat::assert_eq!(stats.total_bytes, 48);
+//!
+//!     // At the point of peak heap size, two allocations totalling 32 bytes existed.
+//!     dhat::assert_eq!(stats.max_blocks, 2);
+//!     dhat::assert_eq!(stats.max_bytes, 32);
+//!
+//!     // Now a single allocation remains alive.
+//!     dhat::assert_eq!(stats.curr_blocks, 1);
+//!     dhat::assert_eq!(stats.curr_bytes, 16);
+//! }
+//! # test()
+//! ```
+//! The [`testing`](ProfilerBuilder::testing) call puts the profiler into
+//! testing mode, which allows the stats provided by [`HeapStats::get`] to be
+//! checked with [`dhat::assert!`](assert) and similar assertions. These
+//! assertions work much the same as normal assertions, except that if any of
+//! them fail a heap profile will be saved.
+//!
+//! When viewing the heap profile after a test failure, the best choice of sort
+//! metric in the viewer will depend on which stat was involved in the
+//! assertion failure.
+//! - `total_blocks`: "Total (blocks)"
+//! - `total_bytes`: "Total (bytes)"
+//! - `max_blocks` or `max_bytes`: "At t-gmax (bytes)"
+//! - `curr_blocks` or `curr_bytes`: "At t-end (bytes)"
+//!
+//! This should give you a good understanding of why the assertion failed.
+//!
+//! Note: if you try this example test it may work in a debug build but fail in
+//! a release build. This is because the compiler may optimize away some of the
+//! allocations that are unused. This is a common problem for contrived
+//! examples but less common for real tests. The unstable
+//! [`std::hint::black_box`](std::hint::black_box) function may also be helpful
+//! in this situation.
+//!
+//! # Ad hoc usage testing
+//!
+//! Ad hoc usage testing is also possible. It can be used to ensure certain
+//! code points in your program are hit a particular number of times during
+//! execution. It works in much the same way as heap usage testing, but
+//! [`ProfilerBuilder::ad_hoc`] must be specified, [`AdHocStats::get`] is
+//! used instead of [`HeapStats::get`], and there is no possibility of Rust's
+//! test runner code interfering with the tests.
+
+use backtrace::SymbolName;
+use lazy_static::lazy_static;
+// In normal Rust code, the allocator is on a lower level than the mutex
+// implementation, which means the mutex implementation can use the allocator.
+// But DHAT implements an allocator which requires a mutex. If we're not
+// careful, this can easily result in deadlocks from circular sequences of
+// operations, E.g. see #18 and #25 from when we used `parking_lot::Mutex`. We
+// now use `mintex::Mutex`, which is guaranteed to not allocate, effectively
+// making the mutex implementation on a lower level than the allocator,
+// allowing the allocator to depend on it.
+use mintex::Mutex;
+use rustc_hash::FxHashMap;
+use serde::Serialize;
+use std::alloc::{GlobalAlloc, Layout, System};
+use std::cell::Cell;
+use std::fs::File;
+use std::hash::{Hash, Hasher};
+use std::io::BufWriter;
+use std::ops::AddAssign;
+use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
+use thousands::Separable;
+
+lazy_static! {
+    static ref TRI_GLOBALS: Mutex<Phase<Globals>> = Mutex::new(Phase::Ready);
+}
+
+// State transition diagram:
+//
+// +---------------> Ready
+// |                   |
+// | Profiler::        | ProfilerBuilder::
+// | drop_inner()      | build()
+// |                   v
+// +---------------- Running
+// |                   |
+// |                   | check_assert_condition()
+// |                   | [if the check fails]
+// |                   v
+// +---------------- PostAssert
+//
+// Note: the use of `std::process::exit` or `std::mem::forget` (on the
+// `Profiler`) can result in termination while the profiler is still running,
+// i.e. it won't produce output.
+#[derive(PartialEq)]
+enum Phase<T> {
+    // We are ready to start running a `Profiler`.
+    Ready,
+
+    // A `Profiler` is running.
+    Running(T),
+
+    // The current `Profiler` has stopped due to as assertion failure, but
+    // hasn't been dropped yet.
+    PostAssert,
+}
+
+# Modus cognitius profanam ne duae virtutis mundi
+
+## Ut vita
+
+Lorem markdownum litora, care ponto nomina, et ut aspicit gelidas sui et
+purpureo genuit. Tamen colla venientis [delphina](http://nil-sol.com/ecquis)
+Tusci et temptata citaeque curam isto ubi vult vulnere reppulit.
+
+- :one: Seque vidit flendoque de quodam
+- :two: Dabit minimos deiecto caputque noctis pluma
+- :three: Leti coniunx est Helicen
+- :four: Illius pulvereumque Icare inpositos
+- :five: Vivunt pereo pluvio tot ramos Olenios gelidis
+- :six: Quater teretes natura inde
+
+### A subsection
+
+Protinus dicunt, breve per, et vivacis genus Orphei munere. Me terram [dimittere
+casside](http://corpus.org/) pervenit saxo primoque frequentat genuum sorori
+praeferre causas Libys. Illud in serpit adsuetam utrimque nunc haberent,
+**terrae si** veni! Hectoreis potes sumite [Mavortis retusa](http://tua.org/)
+granum captantur potuisse Minervae, frugum.
+
+> Clivo sub inprovisoque nostrum minus fama est, discordia patrem petebat precatur
+absumitur, poena per sit. Foramina *tamen cupidine* memor supplex tollentes
+dictum unam orbem, Anubis caecae. Viderat formosior tegebat satis, Aethiopasque
+sit submisso coniuge tristis ubi! :exclamation:
+
+## Praeceps Corinthus totidem quem crus vultum cape
+
+```rs
+#[derive(Debug)]
+pub struct Site {
+    /// The base path of the gutenberg site
+    pub base_path: PathBuf,
+    /// The parsed config for the site
+    pub config: Config,
+    pub pages: HashMap<PathBuf, Page>,
+    pub sections: HashMap<PathBuf, Section>,
+    pub tera: Tera,
+    live_reload: bool,
+    output_path: PathBuf,
+    static_path: PathBuf,
+    pub tags: Option<Taxonomy>,
+    pub categories: Option<Taxonomy>,
+    /// A map of all .md files (section and pages) and their permalink
+    /// We need that if there are relative links in the content that need to be resolved
+    pub permalinks: HashMap<String, String>,
+}
+```
+
+## More stuff
+And a shortcode:
+
+{{ youtube(id="my_youtube_id") }}
+
+### Another subsection
+Gotta make the toc do a little bit of work
+
+# A big title :fire:
+
+- hello
+- world
+- !
+
+```py
+if __name__ == "__main__":
+    gen_site("basic-blog", [""], 250, paginate=True)
+```
