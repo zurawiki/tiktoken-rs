@@ -31,6 +31,12 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // chat
     ("gpt-4-", Tokenizer::Cl100kBase),
     ("gpt-3.5-turbo-", Tokenizer::Cl100kBase),
+    ("gpt-35-turbo-", Tokenizer::Cl100kBase),
+    // fine-tuned
+    ("ft:gpt-4", Tokenizer::Cl100kBase),
+    ("ft:gpt-3.5-turbo", Tokenizer::Cl100kBase),
+    ("ft:davinci-002", Tokenizer::Cl100kBase),
+    ("ft:babbage-002", Tokenizer::Cl100kBase),
 ];
 
 const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
@@ -136,6 +142,10 @@ mod tests {
             Some(Tokenizer::Cl100kBase)
         );
         assert_eq!(get_tokenizer("gpt-3.5-turbo"), Some(Tokenizer::Cl100kBase));
+        assert_eq!(
+            get_tokenizer("ft:gpt-3.5-turbo:XXXXXX:2023-11-11"),
+            Some(Tokenizer::Cl100kBase)
+        );
         assert_eq!(
             get_tokenizer("gpt-3.5-turbo-0301"),
             Some(Tokenizer::Cl100kBase)
