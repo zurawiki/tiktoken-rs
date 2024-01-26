@@ -136,10 +136,18 @@ mod tests {
 
     #[test]
     fn test_get_tokenizer() {
+        assert_eq!(
+            get_tokenizer("gpt-4-0125-preview"),
+            Some(Tokenizer::Cl100kBase)
+        );
         assert_eq!(get_tokenizer("gpt-4-32k-0314"), Some(Tokenizer::Cl100kBase));
         assert_eq!(
             get_tokenizer("gpt-4-1106-preview"),
             Some(Tokenizer::Cl100kBase)
+        );
+        assert_eq!(
+            get_tokenizer("gpt-3.5-turbo-1106"),
+            Some(Tokenizer::Cl100kBase),
         );
         assert_eq!(get_tokenizer("gpt-3.5-turbo"), Some(Tokenizer::Cl100kBase));
         assert_eq!(
