@@ -146,6 +146,10 @@ mod tests {
             Some(Tokenizer::Cl100kBase)
         );
         assert_eq!(
+            get_tokenizer("gpt-3.5-turbo-0125"),
+            Some(Tokenizer::Cl100kBase),
+        );
+        assert_eq!(
             get_tokenizer("gpt-3.5-turbo-1106"),
             Some(Tokenizer::Cl100kBase),
         );
