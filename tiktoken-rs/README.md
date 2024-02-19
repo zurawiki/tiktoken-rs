@@ -110,7 +110,7 @@ println!("max_tokens: {}", max_tokens);
 | `p50k_edit`             | Use for edit models like `text-davinci-edit-001`, `code-davinci-edit-001` |
 | `r50k_base` (or `gpt2`) | GPT-3 models like `davinci`                                               |
 
-See the [examples](./examples/) in the repo for use cases. For more context on the different tokenizers, see the [OpenAI Cookbook](https://github.com/openai/openai-cookbook/blob/66b988407d8d13cad5060a881dc8c892141f2d5c/examples/How_to_count_tokens_with_tiktoken.ipynb)
+See the [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/tiktoken-rs/examples) in the repo for use cases. For more context on the different tokenizers, see the [OpenAI Cookbook](https://github.com/openai/openai-cookbook/blob/66b988407d8d13cad5060a881dc8c892141f2d5c/examples/How_to_count_tokens_with_tiktoken.ipynb)
 
 # Encountered any bugs?
 
