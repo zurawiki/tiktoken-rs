@@ -15,8 +15,6 @@ use pyo3::exceptions;
 use pyo3::prelude::*;
 #[cfg(feature = "python")]
 use pyo3::types::{PyBytes, PyList, PyTuple};
-#[cfg(feature = "python")]
-use pyo3::PyResult;
 
 fn _byte_pair_merge<T>(
     piece: &[u8],
