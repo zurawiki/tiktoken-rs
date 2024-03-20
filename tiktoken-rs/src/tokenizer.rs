@@ -68,6 +68,8 @@ const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("code-davinci-edit-001", Tokenizer::P50kEdit),
     // embeddings
     ("text-embedding-ada-002", Tokenizer::Cl100kBase),
+    ("text-embedding-3-small", Tokenizer::Cl100kBase),
+    ("text-embedding-3-large", Tokenizer::Cl100kBase),
     // old embeddings
     ("text-similarity-davinci-001", Tokenizer::R50kBase),
     ("text-similarity-curie-001", Tokenizer::R50kBase),
