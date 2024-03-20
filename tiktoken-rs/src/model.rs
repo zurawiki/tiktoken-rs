@@ -51,10 +51,10 @@ pub fn get_context_size(model: &str) -> usize {
         return 16_385;
     }
     if starts_with_any!(model, "gpt-3.5-turbo-16k") {
-        return 16_384;
+        return 16_385;
     }
     if starts_with_any!(model, "gpt-3.5-turbo") {
-        return 4096;
+        return 16_385;
     }
     if starts_with_any!(model, "text-davinci-002", "text-davinci-003") {
         return 4097;
