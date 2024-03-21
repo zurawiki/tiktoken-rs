@@ -1,0 +1,6 @@
+format: 0.3.0
+project:
+  name: template-wasm-rs-app-types
+  type: app/rust
+source:
+  schema: ./polywrap.app.graphql

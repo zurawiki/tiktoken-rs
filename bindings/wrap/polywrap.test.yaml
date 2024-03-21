@@ -1,0 +1,37 @@
+name: tiktoken-wrap
+format: 0.2.0
+jobs:
+  getContextSize:
+    jobs:
+      davinci:
+        steps:
+          - uri: fs/build
+            method: getContextSize
+            args:
+              model: "davinci"
+      gpt4:
+        steps:
+          - uri: fs/build
+            method: getContextSize
+            args:
+              model: "gpt-4"
+  p50kBase:
+    steps:
+      - uri: fs/build
+        method: p50kBase
+    jobs:
+      encode:
+        steps:
+          - uri: fs/build
+            method: encodeWithSpecialTokens
+            args:
+              bpe: $p50kBase.0.data
+              text: "This is a test         with a lot of spaces"
+        jobs:
+          decode:
+            steps:
+              - uri: fs/build
+                method: decode
+                args:
+                  bpe: $p50kBase.0.data
+                  tokens: $p50kBase.encode.0.data
