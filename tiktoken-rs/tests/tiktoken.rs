@@ -1,7 +1,7 @@
 use rustc_hash::FxHashMap as HashMap;
 
 use tiktoken_rs::{
-    byte_pair_split, cl100k_base, p50k_base, p50k_base_singleton, r50k_base, CoreBPE,
+    byte_pair_split, cl100k_base, o200k_base, p50k_base, p50k_base_singleton, r50k_base, CoreBPE,
 };
 
 #[test]
@@ -96,6 +96,37 @@ fn cl100k_split_test() {
 }
 
 #[test]
+fn o200k_base_test() {
+    let bpe = o200k_base().unwrap();
+    test_roundtrip(&bpe, "This is a test         with a lot of spaces");
+    test_decode(
+        &bpe,
+        "This is a test         with a lot of spaces",
+        vec![2500, 382, 261, 1746, 269, 483, 261, 3261, 328, 18608],
+    );
+    test_decode(
+        &bpe,
+        "This is a test         with a lot of spaces<|endoftext|>",
+        vec![
+            2500, 382, 261, 1746, 269, 483, 261, 3261, 328, 18608, 199999,
+        ],
+    );
+}
+
+#[test]
+fn o200k_split_test() {
+    let bpe = o200k_base().unwrap();
+    let tokenized: Result<Vec<_>, _> = bpe
+        .split_by_token_iter("This is a test         with a lot of spaces", true)
+        .collect();
+    let tokenized = tokenized.unwrap();
+    assert_eq!(
+        tokenized,
+        vec!["This", " is", " a", " test", "        ", " with", " a", " lot", " of", " spaces"]
+    );
+}
+
+#[test]
 fn p50k_base_singleton_test() {
     // let now = std::time::Instant::now();
     let bpe1 = p50k_base_singleton();
@@ -141,4 +172,5 @@ fn test_unicode_roundtrip() {
     test_roundtrip(&p50k_base().unwrap(), "我想借几本汉语书");
     test_roundtrip(&r50k_base().unwrap(), "我想借几本汉语书");
     test_roundtrip(&cl100k_base().unwrap(), "你会说中文吗？");
+    test_roundtrip(&o200k_base().unwrap(), "ひらがなカタカナ漢字");
 }

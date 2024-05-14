@@ -9,6 +9,7 @@ https://openaipublic.blob.core.windows.net/gpt-2/encodings/main/encoder.json
 https://openaipublic.blob.core.windows.net/encodings/r50k_base.tiktoken
 https://openaipublic.blob.core.windows.net/encodings/p50k_base.tiktoken
 https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken
+https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken
 EOF
 )
 

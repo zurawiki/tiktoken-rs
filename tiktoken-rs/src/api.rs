@@ -3,7 +3,7 @@ use anyhow::{anyhow, Result};
 use crate::{
     cl100k_base,
     model::get_context_size,
-    p50k_base, p50k_edit, r50k_base,
+    o200k_base, p50k_base, p50k_edit, r50k_base,
     tokenizer::{get_tokenizer, Tokenizer},
     CoreBPE,
 };
@@ -99,7 +99,7 @@ pub fn num_tokens_from_messages(
 ) -> Result<usize> {
     let tokenizer =
         get_tokenizer(model).ok_or_else(|| anyhow!("No tokenizer found for model {}", model))?;
-    if tokenizer != Tokenizer::Cl100kBase {
+    if tokenizer != Tokenizer::Cl100kBase && tokenizer != Tokenizer::O200kBase {
         anyhow::bail!("Chat completion is only supported chat models")
     }
     let bpe = get_bpe_from_tokenizer(tokenizer)?;
@@ -255,6 +255,7 @@ pub fn get_bpe_from_model(model: &str) -> Result<CoreBPE> {
 /// If successful, the function returns a `Result` containing the `CoreBPE` instance corresponding to the given tokenizer.
 pub fn get_bpe_from_tokenizer(tokenizer: Tokenizer) -> Result<CoreBPE> {
     match tokenizer {
+        Tokenizer::O200kBase => o200k_base(),
         Tokenizer::Cl100kBase => cl100k_base(),
         Tokenizer::R50kBase => r50k_base(),
         Tokenizer::P50kBase => p50k_base(),
@@ -318,6 +319,9 @@ mod tests {
 
         let num_tokens = num_tokens_from_messages("gpt-4-0314", &messages).unwrap();
         assert_eq!(num_tokens, 129);
+
+        let num_tokens = num_tokens_from_messages("gpt-4o-2024-05-13", &messages).unwrap();
+        assert_eq!(num_tokens, 124);
     }
 
     #[test]
