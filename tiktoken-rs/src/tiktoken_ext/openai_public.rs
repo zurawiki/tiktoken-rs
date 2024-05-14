@@ -117,3 +117,41 @@ pub fn cl100k_base() -> Result<CoreBPE> {
     )?;
     Ok(bpe)
 }
+
+/// Use for GPT-4o models.
+/// Initializes and returns a new instance of the o200k_base tokenizer.
+pub fn o200k_base() -> Result<CoreBPE> {
+    let o200k_base = include_str!("../../assets/o200k_base.tiktoken");
+
+    let mut encoder: std::collections::HashMap<
+        Vec<u8>,
+        usize,
+        std::hash::BuildHasherDefault<rustc_hash::FxHasher>,
+    > = HashMap::default();
+    for line in o200k_base.lines() {
+        let mut parts = line.split(' ');
+        let raw = parts.next().unwrap();
+        let token = &general_purpose::STANDARD.decode(raw)?;
+        let rank: usize = parts.next().unwrap().parse().unwrap();
+        encoder.insert(token.clone(), rank);
+    }
+
+    let mut special_tokens = HashMap::default();
+    special_tokens.insert(String::from(ENDOFTEXT), 199999);
+    special_tokens.insert(String::from(ENDOFPROMPT), 200018);
+
+    let bpe = CoreBPE::new(
+        encoder,
+        special_tokens,
+        &[
+            "[^\\r\\n\\p{L}\\p{N}]?[\\p{Lu}\\p{Lt}\\p{Lm}\\p{Lo}\\p{M}]*[\\p{Ll}\\p{Lm}\\p{Lo}\\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?",
+            "[^\\r\\n\\p{L}\\p{N}]?[\\p{Lu}\\p{Lt}\\p{Lm}\\p{Lo}\\p{M}]+[\\p{Ll}\\p{Lm}\\p{Lo}\\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?",
+            "\\p{N}{1,3}",
+            " ?[^\\s\\p{L}\\p{N}]+[\\r\\n/]*",
+            "\\s*[\\r\\n]+",
+            "\\s+(?!\\S)",
+            "\\s+",
+        ].join("|"),
+    )?;
+    Ok(bpe)
+}

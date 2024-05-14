@@ -105,6 +105,7 @@ println!("max_tokens: {}", max_tokens);
 
 | Encoding name           | OpenAI models                                                             |
 | ----------------------- | ------------------------------------------------------------------------- |
+| `o200k_base`            | GPT-4o models.                                                            |
 | `cl100k_base`           | ChatGPT models, `text-embedding-ada-002`                                  |
 | `p50k_base`             | Code models, `text-davinci-002`, `text-davinci-003`                       |
 | `p50k_edit`             | Use for edit models like `text-davinci-edit-001`, `code-davinci-edit-001` |

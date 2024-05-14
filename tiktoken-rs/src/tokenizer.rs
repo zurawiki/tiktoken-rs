@@ -20,6 +20,7 @@ use lazy_static::lazy_static;
 /// ```
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub enum Tokenizer {
+    O200kBase,
     Cl100kBase,
     P50kBase,
     R50kBase,
@@ -29,6 +30,7 @@ pub enum Tokenizer {
 
 const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // chat
+    ("gpt-4o-", Tokenizer::O200kBase),
     ("gpt-4-", Tokenizer::Cl100kBase),
     ("gpt-3.5-turbo-", Tokenizer::Cl100kBase),
     ("gpt-35-turbo-", Tokenizer::Cl100kBase),
@@ -41,6 +43,8 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
 
 const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // chat
+    ("gpt-4o-2024-05-13", Tokenizer::O200kBase),
+    ("gpt-4o", Tokenizer::O200kBase),
     ("gpt-4-1106-preview", Tokenizer::Cl100kBase),
     ("gpt-4-32k", Tokenizer::Cl100kBase),
     ("gpt-4", Tokenizer::Cl100kBase),
@@ -138,6 +142,10 @@ mod tests {
 
     #[test]
     fn test_get_tokenizer() {
+        assert_eq!(
+            get_tokenizer("gpt-4o-2024-05-13"),
+            Some(Tokenizer::O200kBase)
+        );
         assert_eq!(
             get_tokenizer("gpt-4-0125-preview"),
             Some(Tokenizer::Cl100kBase)
