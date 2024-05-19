@@ -1,0 +1,5 @@
+{
+  "python.formatting.provider": "black",
+  "python.analysis.typeCheckingMode": "strict",
+  "python.defaultInterpreterPath": "/Users/niraj/Library/Caches/pypoetry/virtualenvs/tiktoken-OAolDqPj-py3.10"
+}

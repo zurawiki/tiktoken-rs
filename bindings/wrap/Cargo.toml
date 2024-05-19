@@ -1,0 +1,30 @@
+[package]
+name = "tiktoken-wrap"
+version = "0.1.0"
+description = "A Polywrap Wasm wrapper of tiktoken-rs"
+authors = ["Polywrap"]
+repository = "https://github.com/polywrap/monorepo"
+license = "MIT"
+edition = "2021"
+
+include = ["src"]
+
+[dependencies]
+hex = "0.4.3"
+polywrap-wasm-rs = { version = "~0.11.2" }
+polywrap_msgpack_serde = "0.0.2-beta.7"
+serde = { version = "1.0", features = ["derive"] }
+tiktoken-rs = { path = "../../tiktoken-rs" }
+rustc-hash = "1.1.0"
+rmp-serde = "1.1.2"
+
+[dev-dependencies]
+polywrap = { version = "0.1.9-beta.2" }
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = 's'
+lto = true
+panic = 'abort'

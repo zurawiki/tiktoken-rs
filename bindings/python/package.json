@@ -1,0 +1,11 @@
+{
+  "name": "template-app-python",
+  "private": true,
+  "scripts": {
+    "codegen": "npx polywrap codegen",
+    "test": "poetry run python -m tiktoken"
+  },
+  "devDependencies": {
+    "polywrap": "0.11.3"
+  }
+}
