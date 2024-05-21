@@ -5,7 +5,7 @@ use parking_lot::Mutex;
 
 use crate::vendor_tiktoken::CoreBPE;
 
-use crate::{cl100k_base, o200k_base, p50k_base, p50k_edit, r50k_base};
+use crate::{cl100k_base, llama3_base, o200k_base, p50k_base, p50k_edit, r50k_base};
 
 /// Returns a singleton instance of the r50k_base tokenizer. (also known as `gpt2`)
 /// Use for GPT-3 models like `davinci`
@@ -60,4 +60,11 @@ pub fn o200k_base_singleton() -> Arc<Mutex<CoreBPE>> {
         static ref O200K_BASE: Arc<Mutex<CoreBPE>> = Arc::new(Mutex::new(o200k_base().unwrap()));
     }
     O200K_BASE.clone()
+}
+
+pub fn llama3_base_singleton() -> Arc<Mutex<CoreBPE>> {
+    lazy_static! {
+        static ref LLAMA3_BASE: Arc<Mutex<CoreBPE>> = Arc::new(Mutex::new(llama3_base().unwrap()));
+    }
+    LLAMA3_BASE.clone()
 }
