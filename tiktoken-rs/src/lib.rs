@@ -8,5 +8,6 @@ pub use api::*;
 pub mod model;
 pub mod tokenizer;
 pub use singleton::*;
+pub use tiktoken_ext::llama3::*;
 pub use tiktoken_ext::openai_public::*;
 pub use vendor_tiktoken::*;

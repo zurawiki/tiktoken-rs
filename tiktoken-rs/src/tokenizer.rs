@@ -26,6 +26,7 @@ pub enum Tokenizer {
     R50kBase,
     P50kEdit,
     Gpt2,
+    Llama3Base,
 }
 
 const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[

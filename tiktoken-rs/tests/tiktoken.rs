@@ -1,7 +1,8 @@
 use rustc_hash::FxHashMap as HashMap;
 
 use tiktoken_rs::{
-    byte_pair_split, cl100k_base, o200k_base, p50k_base, p50k_base_singleton, r50k_base, CoreBPE,
+    byte_pair_split, cl100k_base, llama3_base, o200k_base, p50k_base, p50k_base_singleton,
+    r50k_base, CoreBPE,
 };
 
 #[test]
@@ -127,6 +128,35 @@ fn o200k_split_test() {
 }
 
 #[test]
+fn llama3_base_test() {
+    let bpe = llama3_base().unwrap();
+    test_roundtrip(&bpe, "This is a test         with a lot of spaces");
+    test_decode(
+        &bpe,
+        "This is a test         with a lot of spaces",
+        vec![2028, 374, 264, 1296, 260, 449, 264, 2763, 315, 12908],
+    );
+    test_decode(
+        &bpe,
+        "<|begin_of_text|><|start_header_id|>system<|end_header_id|>You are an assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>This is a test         with a lot of spaces<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n<|reserved_special_token_250|>",
+        vec![128000, 128006, 9125, 128007, 2675, 527, 459, 18328, 13, 128009, 128006, 882, 128007, 2028, 374, 264, 1296, 260, 449, 264, 2763, 315, 12908, 128009, 128006, 78191, 128007, 271, 128255],
+    );
+}
+
+#[test]
+fn llama3_split_test() {
+    let bpe = llama3_base().unwrap();
+    let tokenized: Result<Vec<_>, _> = bpe
+        .split_by_token_iter("This is a test         with a lot of spaces", true)
+        .collect();
+    let tokenized = tokenized.unwrap();
+    assert_eq!(
+        tokenized,
+        vec!["This", " is", " a", " test", "        ", " with", " a", " lot", " of", " spaces"]
+    );
+}
+
+#[test]
 fn p50k_base_singleton_test() {
     // let now = std::time::Instant::now();
     let bpe1 = p50k_base_singleton();
@@ -173,4 +203,5 @@ fn test_unicode_roundtrip() {
     test_roundtrip(&r50k_base().unwrap(), "我想借几本汉语书");
     test_roundtrip(&cl100k_base().unwrap(), "你会说中文吗？");
     test_roundtrip(&o200k_base().unwrap(), "ひらがなカタカナ漢字");
+    test_roundtrip(&llama3_base().unwrap(), "ひらがなカタカナ漢字");
 }

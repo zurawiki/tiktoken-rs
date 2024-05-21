@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 
 use crate::{
-    cl100k_base,
+    cl100k_base, llama3_base,
     model::get_context_size,
     o200k_base, p50k_base, p50k_edit, r50k_base,
     tokenizer::{get_tokenizer, Tokenizer},
@@ -261,6 +261,7 @@ pub fn get_bpe_from_tokenizer(tokenizer: Tokenizer) -> Result<CoreBPE> {
         Tokenizer::P50kBase => p50k_base(),
         Tokenizer::P50kEdit => p50k_edit(),
         Tokenizer::Gpt2 => r50k_base(),
+        Tokenizer::Llama3Base => llama3_base(),
     }
 }
 
