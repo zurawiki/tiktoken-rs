@@ -123,11 +123,7 @@ pub fn cl100k_base() -> Result<CoreBPE> {
 pub fn o200k_base() -> Result<CoreBPE> {
     let o200k_base = include_str!("../../assets/o200k_base.tiktoken");
 
-    let mut encoder: std::collections::HashMap<
-        Vec<u8>,
-        usize,
-        std::hash::BuildHasherDefault<rustc_hash::FxHasher>,
-    > = HashMap::default();
+    let mut encoder = HashMap::default();
     for line in o200k_base.lines() {
         let mut parts = line.split(' ');
         let raw = parts.next().unwrap();
