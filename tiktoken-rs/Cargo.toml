@@ -19,15 +19,15 @@ debug = 1
 
 [dependencies]
 anyhow = "1.0.76"
-async-openai = { version = "0.14.2", optional = true }
-base64 = "0.21.5"
+async-openai = { version = "0.23.4", optional = true }
+base64 = "0.22.1"
 bstr = "1.6.2"
 dhat = { version = "0.3.2", optional = true }
-fancy-regex = "0.12.0"
+fancy-regex = "0.13.0"
 lazy_static = "1.4.0"
 parking_lot = "0.12.1"
 pyo3 = { version = "0.19.2", optional = true }
-rustc-hash = "1.1.0"
+rustc-hash = "2.0.0"
 
 [features]
 python = ["dep:pyo3"] # build python bindings
