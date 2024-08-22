@@ -1,6 +1,6 @@
 [package]
 name = "tiktoken-rs"
-version = "0.5.11"
+version = "0.5.12"
 description = "Library for encoding and decoding with the tiktoken library in Rust"
 include = ["assets/**/*", "src/**/*", "README.md"]
 edition = "2021"
@@ -30,6 +30,6 @@ pyo3 = { version = "0.19.2", optional = true }
 rustc-hash = "2.0.0"
 
 [features]
-python = ["dep:pyo3"] # build python bindings
+python = ["dep:pyo3"]               # build python bindings
 async-openai = ["dep:async-openai"]
 dhat-heap = ["dep:dhat"]

@@ -265,7 +265,11 @@ impl CoreBPE {
         ret
     }
 
-    fn _encode_native(&self, text: &str, allowed_special: &HashSet<&str>) -> (Vec<usize>, usize) {
+    fn _encode_native(
+        &self,
+        text: &str,
+        allowed_special: &HashSet<&str>,
+    ) -> Result<(Vec<usize>, usize)> {
         let special_regex = self._get_tl_special_regex();
         let regex = self._get_tl_regex();
         let mut ret = vec![];
@@ -292,7 +296,12 @@ impl CoreBPE {
 
             // Okay, here we go, compare this logic to _encode_ordinary_native
             for mat in regex.find_iter(&text[start..end]) {
-                let piece = mat.unwrap().as_str().as_bytes();
+                // NOTE(ivan): this was .unwrap() causing panics in original version due
+                // to stack overflow runtime errors in fancy-regex crate
+                let piece = mat
+                    .map_err(|e| anyhow!("regex match error in tokenizer: {e}"))?
+                    .as_str()
+                    .as_bytes();
                 if let Some(token) = self.encoder.get(piece) {
                     last_piece_token_len = 1;
                     ret.push(*token);
@@ -318,7 +327,7 @@ impl CoreBPE {
 
         // last_piece_token_len is how many tokens came from the last regex split. This is used
         // for determining unstable tokens, since you can't merge across (stable) regex splits
-        (ret, last_piece_token_len)
+        Ok((ret, last_piece_token_len))
     }
 
     fn _increase_last_piece_token_len(
@@ -364,12 +373,12 @@ impl CoreBPE {
         &self,
         text: &str,
         allowed_special: &HashSet<&str>,
-    ) -> (Vec<usize>, HashSet<Vec<usize>>) {
-        let (tokens, last_piece_token_len) = self._encode_native(text, allowed_special);
+    ) -> Result<(Vec<usize>, HashSet<Vec<usize>>)> {
+        let (tokens, last_piece_token_len) = self._encode_native(text, allowed_special)?;
         if last_piece_token_len == 0 {
             // If last_piece_token_len is zero, the last token was a special token and we have
             // no unstable bytes
-            return (tokens, HashSet::new());
+            return Ok((tokens, HashSet::new()));
         }
         let (mut tokens, last_piece_token_len) =
             self._increase_last_piece_token_len(tokens, last_piece_token_len);
@@ -383,7 +392,7 @@ impl CoreBPE {
 
         let mut completions = HashSet::new();
         if unstable_bytes.is_empty() {
-            return (tokens, completions);
+            return Ok((tokens, completions));
         }
 
         // This is the easy bit. Just find all single tokens that start with unstable_bytes
@@ -473,7 +482,7 @@ impl CoreBPE {
             }
         }
 
-        (tokens, completions)
+        Ok((tokens, completions))
     }
 }
 
@@ -532,17 +541,17 @@ impl CoreBPE {
         self._encode_ordinary_native(text)
     }
 
-    pub fn encode(&self, text: &str, allowed_special: HashSet<&str>) -> Vec<usize> {
-        self._encode_native(text, &allowed_special).0
+    pub fn encode(&self, text: &str, allowed_special: HashSet<&str>) -> Result<Vec<usize>> {
+        Ok(self._encode_native(text, &allowed_special)?.0)
     }
 
-    pub fn encode_with_special_tokens(&self, text: &str) -> Vec<usize> {
+    pub fn encode_with_special_tokens(&self, text: &str) -> Result<Vec<usize>> {
         let allowed_special = self
             .special_tokens_encoder
             .keys()
             .map(|s| s.as_str())
             .collect();
-        self._encode_native(text, &allowed_special).0
+        Ok(self._encode_native(text, &allowed_special)?.0)
     }
 
     // ====================
@@ -600,7 +609,8 @@ impl CoreBPE {
         text: &'a str,
         use_special_tokens: bool,
     ) -> Result<Vec<String>> {
-        self.split_by_token_iter(text, use_special_tokens).collect()
+        self.split_by_token_iter(text, use_special_tokens)?
+            .collect()
     }
 
     /// Iterator for decoding and splitting a String.
@@ -609,17 +619,17 @@ impl CoreBPE {
         &'a self,
         text: &'a str,
         use_special_tokens: bool,
-    ) -> impl Iterator<Item = Result<String>> + 'a {
+    ) -> Result<impl Iterator<Item = Result<String>> + 'a> {
         // First, encode the text using the BPE model
         let encoded = match use_special_tokens {
-            true => self.encode_with_special_tokens(text),
+            true => self.encode_with_special_tokens(text)?,
             false => self.encode_ordinary(text),
         };
 
-        self._decode_native_and_split(encoded).map(|token| {
+        Ok(self._decode_native_and_split(encoded).map(|token| {
             // Map each token to a Result<String>
             Ok(String::from_utf8_lossy(token.as_slice()).to_string())
-        })
+        }))
     }
 
     /// Tokenize a string and return the decoded tokens using the correct BPE model.
@@ -633,7 +643,7 @@ impl CoreBPE {
     pub fn split_by_token_ordinary_iter<'a>(
         &'a self,
         text: &'a str,
-    ) -> impl Iterator<Item = Result<String>> + 'a {
+    ) -> Result<impl Iterator<Item = Result<String>> + 'a> {
         self.split_by_token_iter(text, false)
     }
 }
@@ -695,12 +705,16 @@ impl CoreBPE {
         py: Python,
         text: &str,
         allowed_special: HashSet<&str>,
-    ) -> Py<PyTuple> {
-        let (tokens, completions) =
-            py.allow_threads(|| self._encode_unstable_native(text, &allowed_special));
-        let py_completions =
-            PyList::new(py, completions.iter().map(|seq| PyList::new(py, &seq[..])));
-        (tokens, py_completions).into_py(py)
+    ) -> PyResult<Py<PyTuple>> {
+        let res = py.allow_threads(|| self._encode_unstable_native(text, &allowed_special));
+        match res {
+            Ok((tokens, completions)) => {
+                let py_completions =
+                    PyList::new(py, completions.iter().map(|seq| PyList::new(py, &seq[..])));
+                Ok((tokens, py_completions).into_py(py))
+            }
+            Err(e) => Err(pyo3::exceptions::PyRuntimeError::new_err(e.to_string())),
+        }
     }
 
     fn encode_single_token(&self, piece: &[u8]) -> PyResult<usize> {
