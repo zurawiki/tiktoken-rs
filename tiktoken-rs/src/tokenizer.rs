@@ -30,6 +30,7 @@ pub enum Tokenizer {
 
 const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // chat
+    ("chatgpt-4o-latest", Tokenizer::O200kBase),
     ("gpt-4o-", Tokenizer::O200kBase),
     ("gpt-4-", Tokenizer::Cl100kBase),
     ("gpt-3.5-turbo-", Tokenizer::Cl100kBase),
