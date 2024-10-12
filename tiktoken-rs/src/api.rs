@@ -84,7 +84,7 @@ pub struct ChatCompletionRequestMessage {
 /// # Returns
 ///
 /// * `Result<usize>`: A Result containing the total number of tokens needed to encode the messages
-/// for the specified model, or an error if the tokenizer for the model is not found or not supported.
+///   for the specified model, or an error if the tokenizer for the model is not found or not supported.
 ///
 /// # Errors
 ///
