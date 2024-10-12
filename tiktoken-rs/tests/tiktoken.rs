@@ -15,13 +15,13 @@ fn very_simple_test() {
 }
 
 fn test_roundtrip(bpe: &CoreBPE, text: &str) {
-    let tokens = bpe.encode_with_special_tokens(text);
+    let tokens = bpe.encode_with_special_tokens(text).unwrap();
     let decoded = bpe.decode(tokens).unwrap();
     assert_eq!(decoded, text);
 }
 
 fn test_decode(bpe: &CoreBPE, text: &str, exected_tokens: Vec<usize>) {
-    let tokens = bpe.encode_with_special_tokens(text);
+    let tokens = bpe.encode_with_special_tokens(text).unwrap();
     assert_eq!(tokens, exected_tokens,);
 }
 
@@ -87,6 +87,7 @@ fn cl100k_split_test() {
     let bpe = cl100k_base().unwrap();
     let tokenized: Result<Vec<_>, _> = bpe
         .split_by_token_iter("This is a test         with a lot of spaces", true)
+        .unwrap()
         .collect();
     let tokenized = tokenized.unwrap();
     assert_eq!(
@@ -118,6 +119,7 @@ fn o200k_split_test() {
     let bpe = o200k_base().unwrap();
     let tokenized: Result<Vec<_>, _> = bpe
         .split_by_token_iter("This is a test         with a lot of spaces", true)
+        .unwrap()
         .collect();
     let tokenized = tokenized.unwrap();
     assert_eq!(
@@ -134,8 +136,9 @@ fn p50k_base_singleton_test() {
     // let now = std::time::Instant::now();
     {
         let guard = bpe1.lock();
-        let tokens =
-            guard.encode_with_special_tokens("This is a test         with a lot of spaces");
+        let tokens = guard
+            .encode_with_special_tokens("This is a test         with a lot of spaces")
+            .unwrap();
         guard.decode(tokens).unwrap();
     }
     // println!("p50k_base encode/decode 1: {:?}", now.elapsed());
@@ -146,8 +149,9 @@ fn p50k_base_singleton_test() {
     // let now = std::time::Instant::now();
     {
         let guard = bpe2.lock();
-        let tokens =
-            guard.encode_with_special_tokens("This is a test         with a lot of spaces");
+        let tokens = guard
+            .encode_with_special_tokens("This is a test         with a lot of spaces")
+            .unwrap();
         guard.decode(tokens).unwrap();
     }
     // println!("p50k_base encode/decode 2: {:?}", now.elapsed());
