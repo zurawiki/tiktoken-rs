@@ -131,7 +131,7 @@ impl CoreBPE {
     /// # Returns
     ///
     /// * Result<Vec<String>>: A Result containing a vector of decoded tokens as strings, or an error
-    /// if the string cannot be converted into a valid UTF-8 string.
+    ///   if the string cannot be converted into a valid UTF-8 string.
     ///
     /// # Errors
     ///
