@@ -1,4 +1,8 @@
 #[rustfmt::skip]
+/// This file is a vendored copy of the `tiktoken` crate.
+/// Modifications are limited to commenting out python related code and adjusting visibility of some functions, and suppressing lint warnings.
+/// Limit modifications to this file to make it easy to keep it in sync with upsteam
+
 // This check is new and seems buggy (possibly with PyO3 interaction)
 // #![allow(clippy::borrow_deref_ref)]
 
@@ -149,7 +153,7 @@ fn hash_current_thread() -> usize {
 }
 
 #[derive(Debug, Clone)]
-struct DecodeKeyError {
+pub(crate) struct DecodeKeyError {
     token: Rank,
 }
 
@@ -159,17 +163,18 @@ impl std::fmt::Display for DecodeKeyError {
     }
 }
 
-const MAX_NUM_THREADS: usize = 128;
+pub(crate) const MAX_NUM_THREADS: usize = 128;
 
 // #[pyclass]
 pub struct CoreBPE {
-    encoder: HashMap<Vec<u8>, Rank>,
-    special_tokens_encoder: HashMap<String, Rank>,
-    decoder: HashMap<Rank, Vec<u8>>,
-    special_tokens_decoder: HashMap<Rank, Vec<u8>>,
-    regex_tls: Vec<Regex>,
-    special_regex_tls: Vec<Regex>,
-    sorted_token_bytes: Vec<Vec<u8>>,
+    pub(crate) encoder: HashMap<Vec<u8>, Rank>,
+    pub(crate) special_tokens_encoder: HashMap<String, Rank>,
+    pub(crate) decoder: HashMap<Rank, Vec<u8>>,
+    pub(crate) special_tokens_decoder: HashMap<Rank, Vec<u8>>,
+    pub(crate) regex_tls: Vec<Regex>,
+    pub(crate) special_regex_tls: Vec<Regex>,
+    #[allow(dead_code)]
+    pub(crate) sorted_token_bytes: Vec<Vec<u8>>,
 }
 
 impl CoreBPE {
@@ -184,7 +189,7 @@ impl CoreBPE {
         &self.special_regex_tls[hash_current_thread() % MAX_NUM_THREADS]
     }
 
-    fn _decode_native(&self, tokens: &[Rank]) -> Result<Vec<u8>, DecodeKeyError> {
+    pub(crate) fn _decode_native(&self, tokens: &[Rank]) -> Result<Vec<u8>, DecodeKeyError> {
         let mut ret = Vec::with_capacity(tokens.len() * 2);
         for &token in tokens {
             let token_bytes = match self.decoder.get(&token) {
@@ -199,7 +204,7 @@ impl CoreBPE {
         Ok(ret)
     }
 
-    fn _encode_ordinary_native(&self, text: &str) -> Vec<Rank> {
+    pub(crate) fn _encode_ordinary_native(&self, text: &str) -> Vec<Rank> {
         // This is the core of the encoding logic; the other functions in here
         // just make things complicated :-)
         let regex = self._get_tl_regex();
@@ -214,7 +219,11 @@ impl CoreBPE {
         ret
     }
 
-    fn _encode_native(&self, text: &str, allowed_special: &HashSet<&str>) -> (Vec<Rank>, usize) {
+    pub(crate) fn _encode_native(
+        &self,
+        text: &str,
+        allowed_special: &HashSet<&str>,
+    ) -> (Vec<Rank>, usize) {
         let special_regex = self._get_tl_special_regex();
         let regex = self._get_tl_regex();
         let mut ret = vec![];

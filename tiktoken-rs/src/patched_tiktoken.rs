@@ -1,10 +1,13 @@
 use super::vendor_tiktoken::*;
 
+use anyhow::anyhow;
+use anyhow::Result;
 use fancy_regex::Regex;
 use rustc_hash::FxHashMap as HashMap;
 use std::collections::HashSet;
-use std::num::NonZeroU64;
-use std::thread;
+
+// used to handle errors in the core below
+impl std::error::Error for DecodeKeyError {}
 
 /// Rust API
 impl CoreBPE {
@@ -15,8 +18,8 @@ impl CoreBPE {
     // This function a copy of the similar function in python API, but it return
     // Rust's results and errors
     pub fn new(
-        encoder: HashMap<Vec<u8>, usize>,
-        special_tokens_encoder: HashMap<String, usize>,
+        encoder: HashMap<Vec<u8>, Rank>,
+        special_tokens_encoder: HashMap<String, Rank>,
         pattern: &str,
     ) -> Result<Self> {
         let regex = Regex::new(pattern).map_err(|e| anyhow!(e.to_string()))?;
@@ -29,12 +32,12 @@ impl CoreBPE {
             Regex::new(&_parts.join("|")).map_err(|e| anyhow!(e.to_string()))?
         };
 
-        let decoder: HashMap<usize, Vec<u8>> =
+        let decoder: HashMap<Rank, Vec<u8>> =
             encoder.iter().map(|(k, v)| (*v, k.clone())).collect();
 
         assert!(encoder.len() == decoder.len());
 
-        let special_tokens_decoder: HashMap<usize, Vec<u8>> = special_tokens_encoder
+        let special_tokens_decoder: HashMap<Rank, Vec<u8>> = special_tokens_encoder
             .iter()
             .map(|(k, v)| (*v, k.as_bytes().to_vec()))
             .collect();
@@ -56,15 +59,15 @@ impl CoreBPE {
         })
     }
 
-    pub fn encode_ordinary(&self, text: &str) -> Vec<usize> {
+    pub fn encode_ordinary(&self, text: &str) -> Vec<Rank> {
         self._encode_ordinary_native(text)
     }
 
-    pub fn encode(&self, text: &str, allowed_special: HashSet<&str>) -> Vec<usize> {
+    pub fn encode(&self, text: &str, allowed_special: HashSet<&str>) -> Vec<Rank> {
         self._encode_native(text, &allowed_special).0
     }
 
-    pub fn encode_with_special_tokens(&self, text: &str) -> Vec<usize> {
+    pub fn encode_with_special_tokens(&self, text: &str) -> Vec<Rank> {
         let allowed_special = self
             .special_tokens_encoder
             .keys()
@@ -80,11 +83,24 @@ impl CoreBPE {
     /// Decode a vector of tokens into a valid UTF-8 String
     ///
     /// If unicode validation is not wanted, see _decode_native.
-    pub fn decode(&self, tokens: Vec<usize>) -> Result<String> {
-        match String::from_utf8(self._decode_native(&tokens)) {
+    pub fn decode(&self, tokens: Vec<Rank>) -> Result<String> {
+        match String::from_utf8(self._decode_native(&tokens)?) {
             Ok(text) => Ok(text),
             Err(e) => Err(anyhow!("Unable to decode into a valid UTF-8 string: {}", e)),
         }
+    }
+
+    pub fn _decode_native_and_split(
+        &self,
+        tokens: Vec<Rank>,
+    ) -> impl Iterator<Item = Vec<u8>> + '_ {
+        tokens.into_iter().map(|token| {
+            let token_bytes = self
+                .decoder
+                .get(&token)
+                .unwrap_or_else(|| &self.special_tokens_decoder[&token]);
+            token_bytes.clone()
+        })
     }
 
     /// Tokenize a string and return the decoded tokens using the correct BPE model.

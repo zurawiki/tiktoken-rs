@@ -10,7 +10,7 @@ use base64::{engine::general_purpose, Engine as _};
 
 use rustc_hash::FxHashMap as HashMap;
 
-use crate::vendor_tiktoken::CoreBPE;
+use crate::{vendor_tiktoken::CoreBPE, Rank};
 
 /// Use for GPT-3 models like `davinci`
 /// Initializes and returns a new instance of the r50k_base tokenizer (also known as `gpt2`)
@@ -21,7 +21,7 @@ pub fn r50k_base() -> Result<CoreBPE> {
     for line in bpe_file.lines() {
         let mut parts = line.split(' ');
         let token = &general_purpose::STANDARD.decode(parts.next().unwrap())?;
-        let rank: usize = parts.next().unwrap().parse().unwrap();
+        let rank: Rank = parts.next().unwrap().parse().unwrap();
         encoder.insert(token.clone(), rank);
     }
 
@@ -46,7 +46,7 @@ pub fn p50k_base() -> Result<CoreBPE> {
         let mut parts = line.split(' ');
         let raw = parts.next().unwrap();
         let token = &general_purpose::STANDARD.decode(raw)?;
-        let rank: usize = parts.next().unwrap().parse().unwrap();
+        let rank: Rank = parts.next().unwrap().parse().unwrap();
         encoder.insert(token.clone(), rank);
     }
 
@@ -71,7 +71,7 @@ pub fn p50k_edit() -> Result<CoreBPE> {
         let mut parts = line.split(' ');
         let raw = parts.next().unwrap();
         let token = &general_purpose::STANDARD.decode(raw)?;
-        let rank: usize = parts.next().unwrap().parse().unwrap();
+        let rank: Rank = parts.next().unwrap().parse().unwrap();
         encoder.insert(token.clone(), rank);
     }
 
@@ -99,7 +99,7 @@ pub fn cl100k_base() -> Result<CoreBPE> {
         let mut parts = line.split(' ');
         let raw = parts.next().unwrap();
         let token = &general_purpose::STANDARD.decode(raw)?;
-        let rank: usize = parts.next().unwrap().parse().unwrap();
+        let rank: Rank = parts.next().unwrap().parse().unwrap();
         encoder.insert(token.clone(), rank);
     }
 
@@ -125,14 +125,14 @@ pub fn o200k_base() -> Result<CoreBPE> {
 
     let mut encoder: std::collections::HashMap<
         Vec<u8>,
-        usize,
+        Rank,
         std::hash::BuildHasherDefault<rustc_hash::FxHasher>,
     > = HashMap::default();
     for line in o200k_base.lines() {
         let mut parts = line.split(' ');
         let raw = parts.next().unwrap();
         let token = &general_purpose::STANDARD.decode(raw)?;
-        let rank: usize = parts.next().unwrap().parse().unwrap();
+        let rank: Rank = parts.next().unwrap().parse().unwrap();
         encoder.insert(token.clone(), rank);
     }
 
