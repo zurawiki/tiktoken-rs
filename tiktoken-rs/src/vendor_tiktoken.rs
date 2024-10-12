@@ -14,7 +14,7 @@ use fancy_regex::Regex;
 // use pyo3::PyResult;
 use rustc_hash::FxHashMap as HashMap;
 
-type Rank = u32;
+pub type Rank = u32;
 
 fn _byte_pair_merge(ranks: &HashMap<Vec<u8>, Rank>, piece: &[u8]) -> Vec<(usize, Rank)> {
     // This is a vector of (start, rank).
@@ -162,7 +162,7 @@ impl std::fmt::Display for DecodeKeyError {
 const MAX_NUM_THREADS: usize = 128;
 
 // #[pyclass]
-struct CoreBPE {
+pub struct CoreBPE {
     encoder: HashMap<Vec<u8>, Rank>,
     special_tokens_encoder: HashMap<String, Rank>,
     decoder: HashMap<Rank, Vec<u8>>,
