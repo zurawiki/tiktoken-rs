@@ -1,4 +1,5 @@
 // This check is new and seems buggy (possibly with PyO3 interaction)
+#![allow(clippy::doc_lazy_continuation)]
 #![allow(clippy::borrow_deref_ref)]
 #![allow(non_local_definitions)]
 use std::collections::HashSet;
