@@ -2,6 +2,7 @@ use rustc_hash::FxHashMap as HashMap;
 
 use tiktoken_rs::{
     byte_pair_split, cl100k_base, o200k_base, p50k_base, p50k_base_singleton, r50k_base, CoreBPE,
+    Rank,
 };
 
 #[test]
@@ -20,7 +21,7 @@ fn test_roundtrip(bpe: &CoreBPE, text: &str) {
     assert_eq!(decoded, text);
 }
 
-fn test_decode(bpe: &CoreBPE, text: &str, exected_tokens: Vec<usize>) {
+fn test_decode(bpe: &CoreBPE, text: &str, exected_tokens: Vec<Rank>) {
     let tokens = bpe.encode_with_special_tokens(text);
     assert_eq!(tokens, exected_tokens,);
 }
