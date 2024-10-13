@@ -28,8 +28,12 @@ pub enum Tokenizer {
     Gpt2,
 }
 
+// Keep this in sync with:
+// https://github.com/openai/tiktoken/blob/63527649963def8c759b0f91f2eb69a40934e468/tiktoken/model.py#L7
 const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
+    ("o1-", Tokenizer::O200kBase),
     // chat
+    ("chatgpt-4o-", Tokenizer::O200kBase),
     ("gpt-4o-", Tokenizer::O200kBase),
     ("gpt-4-", Tokenizer::Cl100kBase),
     ("gpt-3.5-turbo-", Tokenizer::Cl100kBase),
@@ -41,15 +45,24 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("ft:babbage-002", Tokenizer::Cl100kBase),
 ];
 
+// Keep this in sync with:
+// https://github.com/openai/tiktoken/blob/63527649963def8c759b0f91f2eb69a40934e468/tiktoken/model.py#L22
 const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // chat
-    ("gpt-4o-2024-05-13", Tokenizer::O200kBase),
     ("gpt-4o", Tokenizer::O200kBase),
-    ("gpt-4-1106-preview", Tokenizer::Cl100kBase),
-    ("gpt-4-32k", Tokenizer::Cl100kBase),
     ("gpt-4", Tokenizer::Cl100kBase),
     ("gpt-3.5-turbo", Tokenizer::Cl100kBase),
-    // text
+    ("gpt-3.5", Tokenizer::Cl100kBase),      // Common shorthand
+    ("gpt-35-turbo", Tokenizer::Cl100kBase), // Azure deployment name
+    // base
+    ("davinci-002", Tokenizer::Cl100kBase),
+    ("babbage-002", Tokenizer::Cl100kBase),
+    // embeddings
+    ("text-embedding-ada-002", Tokenizer::Cl100kBase),
+    ("text-embedding-3-small", Tokenizer::Cl100kBase),
+    ("text-embedding-3-large", Tokenizer::Cl100kBase),
+    // DEPRECATED MODELS
+    // text (DEPRECATED)
     ("text-davinci-003", Tokenizer::P50kBase),
     ("text-davinci-002", Tokenizer::P50kBase),
     ("text-davinci-001", Tokenizer::R50kBase),
@@ -60,21 +73,17 @@ const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("curie", Tokenizer::R50kBase),
     ("babbage", Tokenizer::R50kBase),
     ("ada", Tokenizer::R50kBase),
-    // code
+    // code (DEPRECATED)
     ("code-davinci-002", Tokenizer::P50kBase),
     ("code-davinci-001", Tokenizer::P50kBase),
     ("code-cushman-002", Tokenizer::P50kBase),
     ("code-cushman-001", Tokenizer::P50kBase),
     ("davinci-codex", Tokenizer::P50kBase),
     ("cushman-codex", Tokenizer::P50kBase),
-    // edit
+    // edit (DEPRECATED)
     ("text-davinci-edit-001", Tokenizer::P50kEdit),
     ("code-davinci-edit-001", Tokenizer::P50kEdit),
-    // embeddings
-    ("text-embedding-ada-002", Tokenizer::Cl100kBase),
-    ("text-embedding-3-small", Tokenizer::Cl100kBase),
-    ("text-embedding-3-large", Tokenizer::Cl100kBase),
-    // old embeddings
+    // old embeddings (DEPRECATED)
     ("text-similarity-davinci-001", Tokenizer::R50kBase),
     ("text-similarity-curie-001", Tokenizer::R50kBase),
     ("text-similarity-babbage-001", Tokenizer::R50kBase),
@@ -87,6 +96,7 @@ const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("code-search-ada-code-001", Tokenizer::R50kBase),
     // open source
     ("gpt2", Tokenizer::Gpt2),
+    ("gpt-2", Tokenizer::Gpt2), // Maintains consistency with gpt-4
 ];
 
 lazy_static! {

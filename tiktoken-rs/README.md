@@ -31,9 +31,9 @@ Then in your rust code, call the API
 ## Counting token length
 
 ```rust
-use tiktoken_rs::p50k_base;
+use tiktoken_rs::o200k_base;
 
-let bpe = p50k_base().unwrap();
+let bpe = o200k_base().unwrap();
 let tokens = bpe.encode_with_special_tokens(
   "This is a sentence   with spaces"
 );
@@ -65,7 +65,7 @@ let messages = vec![
         function_call: None,
     },
 ];
-let max_tokens = get_chat_completion_max_tokens("gpt-4", &messages).unwrap();
+let max_tokens = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
 println!("max_tokens: {}", max_tokens);
 ```
 
@@ -97,7 +97,7 @@ let messages = vec![
         function_call: None,
     },
 ];
-let max_tokens = get_chat_completion_max_tokens("gpt-4", &messages).unwrap();
+let max_tokens = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
 println!("max_tokens: {}", max_tokens);
 ```
 
@@ -105,7 +105,7 @@ println!("max_tokens: {}", max_tokens);
 
 | Encoding name           | OpenAI models                                                             |
 | ----------------------- | ------------------------------------------------------------------------- |
-| `o200k_base`            | GPT-4o models.                                                            |
+| `o200k_base`            | GPT-4o models, o1 models                                                  |
 | `cl100k_base`           | ChatGPT models, `text-embedding-ada-002`                                  |
 | `p50k_base`             | Code models, `text-davinci-002`, `text-davinci-003`                       |
 | `p50k_edit`             | Use for edit models like `text-davinci-edit-001`, `code-davinci-edit-001` |

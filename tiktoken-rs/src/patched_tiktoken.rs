@@ -1,5 +1,4 @@
 use super::vendor_tiktoken::*;
-
 use anyhow::anyhow;
 use anyhow::Result;
 use fancy_regex::Regex;
@@ -130,7 +129,7 @@ impl CoreBPE {
     ///
     /// # Returns
     ///
-    /// * Result<Vec<String>>: A Result containing a vector of decoded tokens as strings, or an error
+    /// * `Result<Vec<String>>`: A Result containing a vector of decoded tokens as strings, or an error
     ///   if the string cannot be converted into a valid UTF-8 string.
     ///
     /// # Errors
