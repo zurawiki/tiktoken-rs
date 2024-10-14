@@ -49,6 +49,7 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
 // https://github.com/openai/tiktoken/blob/63527649963def8c759b0f91f2eb69a40934e468/tiktoken/model.py#L22
 const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // chat
+    ("chatgpt-4o-latest", Tokenizer::O200kBase),
     ("gpt-4o", Tokenizer::O200kBase),
     ("gpt-4", Tokenizer::Cl100kBase),
     ("gpt-3.5-turbo", Tokenizer::Cl100kBase),
@@ -152,6 +153,10 @@ mod tests {
 
     #[test]
     fn test_get_tokenizer() {
+        assert_eq!(
+            get_tokenizer("chatgpt-4o-latest"),
+            Some(Tokenizer::O200kBase)
+        );
         assert_eq!(
             get_tokenizer("gpt-4o-2024-05-13"),
             Some(Tokenizer::O200kBase)
