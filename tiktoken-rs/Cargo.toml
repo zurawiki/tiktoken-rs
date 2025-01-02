@@ -22,7 +22,7 @@ async-openai = { version = "0.14.2", optional = true }
 base64 = "0.22.0"
 bstr = "1.6.2"
 dhat = { version = "0.3.2", optional = true }
-fancy-regex = "0.13.0"
+fancy-regex = "0.14.0"
 lazy_static = "1.4.0"
 parking_lot = "0.12.1"
 regex = "1.10.3"
