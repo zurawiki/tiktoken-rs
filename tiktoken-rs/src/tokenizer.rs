@@ -32,13 +32,17 @@ pub enum Tokenizer {
 // https://github.com/openai/tiktoken/blob/63527649963def8c759b0f91f2eb69a40934e468/tiktoken/model.py#L7
 const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("o1-", Tokenizer::O200kBase),
+    ("o3-", Tokenizer::O200kBase),
+    ("o4-", Tokenizer::O200kBase),
     // chat
+    ("gpt-4.1-", Tokenizer::O200kBase),
     ("chatgpt-4o-", Tokenizer::O200kBase),
     ("gpt-4o-", Tokenizer::O200kBase),
     ("gpt-4-", Tokenizer::Cl100kBase),
     ("gpt-3.5-turbo-", Tokenizer::Cl100kBase),
     ("gpt-35-turbo-", Tokenizer::Cl100kBase),
     // fine-tuned
+    ("ft:gpt-4o", Tokenizer::O200kBase),
     ("ft:gpt-4", Tokenizer::Cl100kBase),
     ("ft:gpt-3.5-turbo", Tokenizer::Cl100kBase),
     ("ft:davinci-002", Tokenizer::Cl100kBase),
@@ -48,7 +52,11 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
 // Keep this in sync with:
 // https://github.com/openai/tiktoken/blob/63527649963def8c759b0f91f2eb69a40934e468/tiktoken/model.py#L22
 const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
+    // reasoning
+    ("o1", Tokenizer::O200kBase),
+    ("o3", Tokenizer::O200kBase),
     // chat
+    ("gpt-4.1", Tokenizer::O200kBase),
     ("chatgpt-4o-latest", Tokenizer::O200kBase),
     ("gpt-4o", Tokenizer::O200kBase),
     ("gpt-4", Tokenizer::Cl100kBase),

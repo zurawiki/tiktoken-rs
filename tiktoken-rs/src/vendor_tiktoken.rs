@@ -2,7 +2,6 @@
 /// This file is a vendored copy of the `tiktoken` crate.
 /// Modifications are limited to commenting out python related code and adjusting visibility of some functions, and suppressing lint warnings.
 /// Limit modifications to this file to make it easy to keep it in sync with upsteam
-
 // use std::borrow::Borrow;
 // use std::borrow::Cow;
 use std::collections::HashSet;
