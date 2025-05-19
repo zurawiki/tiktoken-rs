@@ -3,10 +3,6 @@ use anyhow::anyhow;
 use anyhow::Result;
 use fancy_regex::Regex;
 use rustc_hash::FxHashMap as HashMap;
-use std::collections::HashSet;
-
-// used to handle errors in the core below
-impl std::error::Error for DecodeKeyError {}
 
 /// Rust API
 impl CoreBPE {
@@ -21,20 +17,23 @@ impl CoreBPE {
         special_tokens_encoder: HashMap<String, Rank>,
         pattern: &str,
     ) -> Result<Self> {
-        let regex = Regex::new(pattern).map_err(|e| anyhow!(e.to_string()))?;
+        let regex = Regex::new(pattern)?;
 
         let special_regex = {
-            let _parts = special_tokens_encoder
+            let parts = special_tokens_encoder
                 .keys()
                 .map(|s| fancy_regex::escape(s))
                 .collect::<Vec<_>>();
-            Regex::new(&_parts.join("|")).map_err(|e| anyhow!(e.to_string()))?
+            Regex::new(&parts.join("|"))?
         };
 
         let decoder: HashMap<Rank, Vec<u8>> =
             encoder.iter().map(|(k, v)| (*v, k.clone())).collect();
 
-        assert!(encoder.len() == decoder.len());
+        assert!(
+            encoder.len() == decoder.len(),
+            "Encoder and decoder must be of equal length; maybe you had duplicate token indices in your encoder?"
+        );
 
         let special_tokens_decoder: HashMap<Rank, Vec<u8>> = special_tokens_encoder
             .iter()
@@ -45,7 +44,7 @@ impl CoreBPE {
         let mut sorted_token_bytes: Vec<Vec<u8>> = encoder.keys().cloned().collect();
         sorted_token_bytes.sort();
 
-        Ok(CoreBPE {
+        Ok(Self {
             encoder,
             special_tokens_encoder,
             decoder,
@@ -58,23 +57,6 @@ impl CoreBPE {
         })
     }
 
-    pub fn encode_ordinary(&self, text: &str) -> Vec<Rank> {
-        self._encode_ordinary_native(text)
-    }
-
-    pub fn encode(&self, text: &str, allowed_special: HashSet<&str>) -> Vec<Rank> {
-        self._encode_native(text, &allowed_special).0
-    }
-
-    pub fn encode_with_special_tokens(&self, text: &str) -> Vec<Rank> {
-        let allowed_special = self
-            .special_tokens_encoder
-            .keys()
-            .map(|s| s.as_str())
-            .collect();
-        self._encode_native(text, &allowed_special).0
-    }
-
     // ====================
     // Decoding
     // ====================
@@ -83,7 +65,7 @@ impl CoreBPE {
     ///
     /// If unicode validation is not wanted, see _decode_native.
     pub fn decode(&self, tokens: Vec<Rank>) -> Result<String> {
-        match String::from_utf8(self._decode_native(&tokens)?) {
+        match String::from_utf8(self.decode_bytes(&tokens)?) {
             Ok(text) => Ok(text),
             Err(e) => Err(anyhow!("Unable to decode into a valid UTF-8 string: {}", e)),
         }
