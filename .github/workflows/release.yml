@@ -47,7 +47,7 @@ jobs:
               run: |
                   git tag "${{ inputs.publish-tag }}"
                   git push origin "${{ inputs.publish-tag }}"
-            - uses: taiki-e/create-gh-release-action@26b80501670402f1999aff4b934e1574ef2d3705 # v1
+            - uses: taiki-e/create-gh-release-action@26b80501670402f1999aff4b934e1574ef2d3705 # v1.9.1
               name: Create github release
               with:
                   branch: main
