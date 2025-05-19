@@ -133,24 +133,16 @@ fn p50k_base_singleton_test() {
     let bpe1 = p50k_base_singleton();
     // println!("p50k_base_singleton load 1: {:?}", now.elapsed());
     // let now = std::time::Instant::now();
-    {
-        let guard = bpe1.lock();
-        let tokens =
-            guard.encode_with_special_tokens("This is a test         with a lot of spaces");
-        guard.decode(tokens).unwrap();
-    }
+    let tokens = bpe1.encode_with_special_tokens("This is a test         with a lot of spaces");
+    bpe1.decode(tokens).unwrap();
     // println!("p50k_base encode/decode 1: {:?}", now.elapsed());
 
     //let now = std::time::Instant::now();
     let bpe2 = p50k_base_singleton();
     // println!("p50k_base_singleton load 2: {:?}", now.elapsed());
     // let now = std::time::Instant::now();
-    {
-        let guard = bpe2.lock();
-        let tokens =
-            guard.encode_with_special_tokens("This is a test         with a lot of spaces");
-        guard.decode(tokens).unwrap();
-    }
+    let tokens = bpe2.encode_with_special_tokens("This is a test         with a lot of spaces");
+    bpe2.decode(tokens).unwrap();
     // println!("p50k_base encode/decode 2: {:?}", now.elapsed());
 }
 

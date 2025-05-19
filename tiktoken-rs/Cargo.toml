@@ -24,7 +24,6 @@ bstr = "1.6.2"
 dhat = { version = "0.3.2", optional = true }
 fancy-regex = "0.13.0"
 lazy_static = "1.4.0"
-parking_lot = "0.12.1"
 regex = "1.10.3"
 rustc-hash = "1.1.0"
 
