@@ -25,7 +25,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     ];
     let max_tokens = get_chat_completion_max_tokens(model, &messages).unwrap();
 
-    println!("Max_token parameter value: {}", max_tokens);
-
+    println!("Max_token parameter value: {max_tokens}");
     Ok(())
 }
