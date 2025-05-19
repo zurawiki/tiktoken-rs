@@ -31,6 +31,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         },
     ];
     let num_tokens = num_tokens_from_messages("gpt-4-turbo", &messages).unwrap();
-    println!("Token count: {num_tokens}");
+    println!("Token count: {}", num_tokens);
     Ok(())
 }
