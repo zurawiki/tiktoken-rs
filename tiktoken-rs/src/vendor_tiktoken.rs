@@ -4,7 +4,6 @@
 /// Limit modifications to this file to make it easy to keep it in sync with upsteam
 // This check is new and seems buggy (possibly with PyO3 interaction)
 // #![allow(clippy::borrow_deref_ref)]
-
 use std::collections::HashSet;
 use std::num::NonZeroU64;
 use std::thread;
