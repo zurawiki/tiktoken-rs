@@ -76,6 +76,13 @@ pub struct ChatCompletionRequestMessage {
 /// the given model. This is used to estimate the number of tokens that will be used for chat
 /// completion.
 ///
+/// # Performance
+///
+/// If this function is going to be called multiple times you'll get better performance loading
+/// your BPE once and calling `num_tokens_from_messages_with_bpe`. As this avoids the overhead of
+/// parsing the BPE vocab files each invocation which can account for 90%+ of the running time of
+/// this function.
+///
 /// # Arguments
 ///
 /// * model: A string slice containing the model name (e.g. "gpt-3.5").
@@ -103,7 +110,38 @@ pub fn num_tokens_from_messages(
         anyhow::bail!("Chat completion is only supported chat models")
     }
     let bpe = get_bpe_from_tokenizer(tokenizer)?;
+    Ok(num_tokens_from_messages_with_bpe(model, &bpe, messages))
+}
 
+/// Based on <https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb>
+///
+/// num_tokens_from_messages returns the number of tokens required to encode the given messages into
+/// the given model. This is used to estimate the number of tokens that will be used for chat
+/// completion.
+///
+/// # Arguments
+///
+/// * model: A string slice containing the model name (e.g. "gpt-3.5").
+/// * bpe: A Byte-Pair Encoding tokeniser to use to count the message tokens
+/// * messages: A slice of ChatCompletionRequestMessage structs representing chat messages.
+///
+/// # Returns
+///
+/// * `Result<usize>`: A Result containing the total number of tokens needed to encode the messages
+/// for the specified model, or an error if the tokenizer for the model is not found or not supported.
+///
+/// # Errors
+///
+/// This function will return an error if:
+///
+/// * The tokenizer for the specified model is not found.
+/// * The tokenizer is not a supported chat model (i.e., not Tokenizer::Cl100kBase).
+///
+pub fn num_tokens_from_messages_with_bpe(
+    model: &str,
+    bpe: &CoreBPE,
+    messages: &[ChatCompletionRequestMessage],
+) -> usize {
     let (tokens_per_message, tokens_per_name) = if model.starts_with("gpt-3.5") {
         (
             4,  // every message follows <im_start>{role/name}\n{content}<im_end>\n
@@ -128,7 +166,7 @@ pub fn num_tokens_from_messages(
         }
     }
     num_tokens += 3; // every reply is primed with <|start|>assistant<|message|>
-    Ok(num_tokens as usize)
+    num_tokens as usize
 }
 
 /// Calculates the maximum number of tokens available for chat completion based on the model and messages provided.
@@ -136,6 +174,13 @@ pub fn num_tokens_from_messages(
 /// This function determines the number of tokens left for a chat completion task, given the model and a slice of
 /// chat completion request messages. It first retrieves the tokenizer for the given model and checks if chat completion
 /// is supported. Then, it calculates the number of tokens in the existing messages using the appropriate tokenizer.
+///
+/// # Performance
+///
+/// If this function is going to be called multiple times you'll get better performance loading
+/// your BPE once and calling `num_tokens_from_messages_with_bpe`. As this avoids the overhead of
+/// parsing the BPE vocab files each invocation which can account for 90%+ of the running time of
+/// this function.
 ///
 /// # Arguments
 ///
@@ -190,6 +235,68 @@ pub fn get_chat_completion_max_tokens(
     let context_size = get_context_size(model);
     let prompt_tokens = num_tokens_from_messages(model, messages)?;
     Ok(context_size.saturating_sub(prompt_tokens))
+}
+
+/// Calculates the maximum number of tokens available for chat completion based on the model and messages provided.
+///
+/// This function determines the number of tokens left for a chat completion task, given the model and a slice of
+/// chat completion request messages. It first retrieves the tokenizer for the given model and checks if chat completion
+/// is supported. Then, it calculates the number of tokens in the existing messages using the appropriate tokenizer.
+///
+/// # Arguments
+///
+/// * `model` - A string slice representing the model name, e.g., "gpt-3.5-turbo".
+/// * `messages` - A slice of `ChatCompletionRequestMessage` instances containing the chat context.
+///
+/// # Errors
+///
+/// This function returns an error in the following cases:
+///
+/// * If there is no tokenizer found for the specified model.
+/// * If chat completion is not supported for the specified model.
+/// * If there is a failure in creating a `CoreBPE` instance for the specified tokenizer.
+///
+/// # Example
+///
+/// ```
+/// use tiktoken_rs::{get_chat_completion_max_tokens, ChatCompletionRequestMessage};
+///
+/// let model = "gpt-3.5-turbo";
+/// let messages = vec![
+///     ChatCompletionRequestMessage {
+///         content: Some("You are a helpful assistant that only speaks French.".to_string()),
+///         role: "system".to_string(),
+///         name: None,
+///         function_call: None,
+///     },
+///     ChatCompletionRequestMessage {
+///         content: Some("Hello, how are you?".to_string()),
+///         role: "user".to_string(),
+///         name: None,
+///         function_call: None,
+///     },
+///     ChatCompletionRequestMessage {
+///         content: Some("Parlez-vous francais?".to_string()),
+///         role: "system".to_string(),
+///         name: None,
+///         function_call: None,
+///     },
+/// ];
+/// let max_tokens = get_chat_completion_max_tokens(model, &messages).unwrap();
+/// ```
+///
+/// # Returns
+///
+/// If successful, the function returns a `Result` containing the maximum number of tokens available for chat completion,
+/// based on the given model and messages.
+pub fn get_chat_completion_max_tokens_with_bpe(
+    model: &str,
+    bpe: &CoreBPE,
+    messages: &[ChatCompletionRequestMessage],
+) -> usize {
+    let context_size = get_context_size(model);
+    let prompt_tokens = num_tokens_from_messages_with_bpe(model, bpe, messages);
+    context_size.saturating_sub(prompt_tokens)
 }
 
 /// Returns a `CoreBPE` instance corresponding to the tokenizer used by the given model.
