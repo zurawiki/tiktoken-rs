@@ -32,6 +32,10 @@ macro_rules! starts_with_any {
 ///
 /// This function does not panic. It returns a default value of 4096 if the model is not recognized.
 pub fn get_context_size(model: &str) -> usize {
+    if let Some(rest) = model.strip_prefix("ft:") {
+        let base = rest.split(':').next().unwrap_or(rest);
+        return get_context_size(base);
+    }
     if starts_with_any!(model, "o1-") {
         return 128_000;
     }
