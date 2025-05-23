@@ -118,7 +118,7 @@ pub fn cl100k_base() -> Result<CoreBPE> {
     Ok(bpe)
 }
 
-/// Use for GPT-4o models.
+/// Use for GPT-4o models and other `o` series models like `o1`, `o3`, and `o4`.
 /// Initializes and returns a new instance of the o200k_base tokenizer.
 pub fn o200k_base() -> Result<CoreBPE> {
     let o200k_base = include_str!("../../assets/o200k_base.tiktoken");
