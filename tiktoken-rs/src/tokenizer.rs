@@ -55,6 +55,7 @@ const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // reasoning
     ("o1", Tokenizer::O200kBase),
     ("o3", Tokenizer::O200kBase),
+    ("o4", Tokenizer::O200kBase),
     // chat
     ("gpt-4.1", Tokenizer::O200kBase),
     ("chatgpt-4o-latest", Tokenizer::O200kBase),
