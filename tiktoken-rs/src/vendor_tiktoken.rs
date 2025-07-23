@@ -164,6 +164,7 @@ impl std::fmt::Display for DecodeKeyError {
 impl std::error::Error for DecodeKeyError {}
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct DecodeError {
     pub message: String,
 }
