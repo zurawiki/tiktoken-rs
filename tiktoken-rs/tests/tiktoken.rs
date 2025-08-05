@@ -1,8 +1,8 @@
 use rustc_hash::FxHashMap as HashMap;
 
 use tiktoken_rs::{
-    byte_pair_split, cl100k_base, o200k_base, p50k_base, p50k_base_singleton, r50k_base, CoreBPE,
-    Rank,
+    byte_pair_split, cl100k_base, o200k_base, o200k_harmony, p50k_base, p50k_base_singleton,
+    r50k_base, CoreBPE, Rank,
 };
 
 #[test]
@@ -166,4 +166,5 @@ fn test_unicode_roundtrip() {
     test_roundtrip(&r50k_base().unwrap(), "我想借几本汉语书");
     test_roundtrip(&cl100k_base().unwrap(), "你会说中文吗？");
     test_roundtrip(&o200k_base().unwrap(), "ひらがなカタカナ漢字");
+    test_roundtrip(&o200k_harmony().unwrap(), "ひらがなカタカナ漢字");
 }

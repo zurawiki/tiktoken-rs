@@ -20,6 +20,7 @@ use lazy_static::lazy_static;
 /// ```
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub enum Tokenizer {
+    O200kHarmony,
     O200kBase,
     Cl100kBase,
     P50kBase,
@@ -29,18 +30,21 @@ pub enum Tokenizer {
 }
 
 // Keep this in sync with:
-// https://github.com/openai/tiktoken/blob/63527649963def8c759b0f91f2eb69a40934e468/tiktoken/model.py#L7
+// https://github.com/openai/tiktoken/blob/eedc856364506a9d4651645a0290eb0ba81e6935/tiktoken/model.py#L7-L27
 const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("o1-", Tokenizer::O200kBase),
     ("o3-", Tokenizer::O200kBase),
     ("o4-", Tokenizer::O200kBase),
     // chat
+    ("gpt-5-", Tokenizer::O200kBase),
+    ("gpt-4.5-", Tokenizer::O200kBase),
     ("gpt-4.1-", Tokenizer::O200kBase),
     ("chatgpt-4o-", Tokenizer::O200kBase),
-    ("gpt-4o-", Tokenizer::O200kBase),
-    ("gpt-4-", Tokenizer::Cl100kBase),
-    ("gpt-3.5-turbo-", Tokenizer::Cl100kBase),
-    ("gpt-35-turbo-", Tokenizer::Cl100kBase),
+    ("gpt-4o-", Tokenizer::O200kBase), // e.g., gpt-4o-2024-05-13
+    ("gpt-4-", Tokenizer::Cl100kBase), // e.g., gpt-4-0314, etc., plus gpt-4-32k
+    ("gpt-3.5-turbo-", Tokenizer::Cl100kBase), // e.g, gpt-3.5-turbo-0301, -0401, etc.
+    ("gpt-35-turbo-", Tokenizer::Cl100kBase), // Azure deployment name
+    ("gpt-oss-", Tokenizer::O200kHarmony),
     // fine-tuned
     ("ft:gpt-4o", Tokenizer::O200kBase),
     ("ft:gpt-4", Tokenizer::Cl100kBase),
@@ -50,13 +54,14 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
 ];
 
 // Keep this in sync with:
-// https://github.com/openai/tiktoken/blob/63527649963def8c759b0f91f2eb69a40934e468/tiktoken/model.py#L22
+// https://github.com/openai/tiktoken/blob/eedc856364506a9d4651645a0290eb0ba81e6935/tiktoken/model.py#L29-L84
 const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // reasoning
     ("o1", Tokenizer::O200kBase),
     ("o3", Tokenizer::O200kBase),
     ("o4", Tokenizer::O200kBase),
     // chat
+    ("gpt-5", Tokenizer::O200kBase),
     ("gpt-4.1", Tokenizer::O200kBase),
     ("chatgpt-4o-latest", Tokenizer::O200kBase),
     ("gpt-4o", Tokenizer::O200kBase),
@@ -162,6 +167,9 @@ mod tests {
 
     #[test]
     fn test_get_tokenizer() {
+        assert_eq!(get_tokenizer("gpt-5"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("gpt-oss-20b"), Some(Tokenizer::O200kHarmony));
+        assert_eq!(get_tokenizer("gpt-oss-120b"), Some(Tokenizer::O200kHarmony));
         assert_eq!(
             get_tokenizer("chatgpt-4o-latest"),
             Some(Tokenizer::O200kBase)

@@ -1,4 +1,19 @@
+pub const STARTOFTEXT: &str = "<|startoftext|>";
 pub const ENDOFTEXT: &str = "<|endoftext|>";
+pub const RESERVED_200000: &str = "<|reserved_200000|>";
+pub const RESERVED_200001: &str = "<|reserved_200001|>";
+pub const RETURN: &str = "<|return|>";
+pub const CONSTRAIN: &str = "<|constrain|>";
+pub const RESERVED_200004: &str = "<|reserved_200004|>";
+pub const CHANNEL: &str = "<|channel|>";
+pub const START: &str = "<|start|>";
+pub const END: &str = "<|end|>";
+pub const MESSAGE: &str = "<|message|>";
+pub const RESERVED_200009: &str = "<|reserved_200009|>";
+pub const RESERVED_200010: &str = "<|reserved_200010|>";
+pub const RESERVED_200011: &str = "<|reserved_200011|>";
+pub const CALL: &str = "<|call|>";
+pub const RESERVED_200013: &str = "<|reserved_200013|>";
 pub const FIM_PREFIX: &str = "<|fim_prefix|>";
 pub const FIM_MIDDLE: &str = "<|fim_middle|>";
 pub const FIM_SUFFIX: &str = "<|fim_suffix|>";
@@ -123,11 +138,7 @@ pub fn cl100k_base() -> Result<CoreBPE> {
 pub fn o200k_base() -> Result<CoreBPE> {
     let o200k_base = include_str!("../../assets/o200k_base.tiktoken");
 
-    let mut encoder: std::collections::HashMap<
-        Vec<u8>,
-        Rank,
-        std::hash::BuildHasherDefault<rustc_hash::FxHasher>,
-    > = HashMap::default();
+    let mut encoder = HashMap::default();
     for line in o200k_base.lines() {
         let mut parts = line.split(' ');
         let raw = parts.next().unwrap();
@@ -139,6 +150,55 @@ pub fn o200k_base() -> Result<CoreBPE> {
     let mut special_tokens = HashMap::default();
     special_tokens.insert(String::from(ENDOFTEXT), 199999);
     special_tokens.insert(String::from(ENDOFPROMPT), 200018);
+
+    let bpe = CoreBPE::new(
+        encoder,
+        special_tokens,
+        &[
+            "[^\\r\\n\\p{L}\\p{N}]?[\\p{Lu}\\p{Lt}\\p{Lm}\\p{Lo}\\p{M}]*[\\p{Ll}\\p{Lm}\\p{Lo}\\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?",
+            "[^\\r\\n\\p{L}\\p{N}]?[\\p{Lu}\\p{Lt}\\p{Lm}\\p{Lo}\\p{M}]+[\\p{Ll}\\p{Lm}\\p{Lo}\\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?",
+            "\\p{N}{1,3}",
+            " ?[^\\s\\p{L}\\p{N}]+[\\r\\n/]*",
+            "\\s*[\\r\\n]+",
+            "\\s+(?!\\S)",
+            "\\s+",
+        ].join("|"),
+    )?;
+    Ok(bpe)
+}
+
+/// Use for gpt-oss models like `gpt-oss-20b`, `gpt-oss-120b`.
+/// Initializes and returns a new instance of the o200k_harmony tokenizer.
+pub fn o200k_harmony() -> Result<CoreBPE> {
+    let o200k_harmony = include_str!("../../assets/o200k_base.tiktoken");
+
+    let mut encoder = HashMap::default();
+    for line in o200k_harmony.lines() {
+        let mut parts = line.split(' ');
+        let raw = parts.next().unwrap();
+        let token = &general_purpose::STANDARD.decode(raw)?;
+        let rank: Rank = parts.next().unwrap().parse().unwrap();
+        encoder.insert(token.clone(), rank);
+    }
+
+    let mut special_tokens = HashMap::default();
+
+    special_tokens.insert(String::from(STARTOFTEXT), 199998);
+    special_tokens.insert(String::from(ENDOFTEXT), 199999);
+    special_tokens.insert(String::from(RESERVED_200000), 200000);
+    special_tokens.insert(String::from(RESERVED_200001), 200001);
+    special_tokens.insert(String::from(RETURN), 200002);
+    special_tokens.insert(String::from(CONSTRAIN), 200003);
+    special_tokens.insert(String::from(RESERVED_200004), 200004);
+    special_tokens.insert(String::from(CHANNEL), 200005);
+    special_tokens.insert(String::from(START), 200006);
+    special_tokens.insert(String::from(END), 200007);
+    special_tokens.insert(String::from(MESSAGE), 200008);
+    special_tokens.insert(String::from(RESERVED_200009), 200009);
+    special_tokens.insert(String::from(RESERVED_200010), 200010);
+    special_tokens.insert(String::from(RESERVED_200011), 200011);
+    special_tokens.insert(String::from(CALL), 200012);
+    special_tokens.insert(String::from(RESERVED_200013), 200013);
 
     let bpe = CoreBPE::new(
         encoder,
