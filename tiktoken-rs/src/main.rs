@@ -20,7 +20,7 @@ struct Args {
 
     /// Input text to count tokens for (reads from stdin if not provided)
     #[arg(value_name = "TEXT")]
-    text: Option<String>,
+    text: Vec<String>,
 }
 
 #[derive(Clone, Copy, clap::ValueEnum)]
@@ -47,10 +47,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     // Get input text from argument or stdin
-    let input_text = if let Some(text) = args.text {
-        text
+    let input_text = if !args.text.is_empty() {
+        args.text.join(" ")
     } else {
         let mut buffer = String::new();
+        eprintln!("🔎 Reading from stdin...");
         io::stdin().read_to_string(&mut buffer)?;
         buffer
     };
