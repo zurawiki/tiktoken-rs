@@ -64,7 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Output based on the specified format
     match args.output {
         OutputFormat::Count => {
-            println!("{}", token_count);
+            println!("{token_count}");
         }
         OutputFormat::Json => {
             let response = TokenCountResponse {
