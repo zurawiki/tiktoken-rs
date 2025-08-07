@@ -18,6 +18,35 @@ This library is built on top of the `tiktoken` library and includes some additio
 
 For full working examples for all supported features, see the [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/tiktoken-rs/examples) directory in the repository.
 
+# CLI Usage
+
+The project includes a command-line interface for token counting:
+
+```bash
+# Count tokens in text from stdin
+echo "Hello, world!" | cargo run --bin tiktoken
+
+# Count tokens with a specific model
+echo "Hello, world!" | cargo run --bin tiktoken -- --model gpt-3.5-turbo
+
+# Count tokens with the o1 model
+echo "Hello, world!" | cargo run --bin tiktoken -- --model o1
+
+# Get help
+cargo run --bin tiktoken -- --help
+```
+
+The CLI outputs JSON with token count, model used, context size, and remaining tokens:
+
+```json
+{
+  "token_count": 4,
+  "model": "gpt-4",
+  "context_size": 8192,
+  "remaining_tokens": 8188
+}
+```
+
 # Usage
 
 1. Install this tool locally with `cargo`
