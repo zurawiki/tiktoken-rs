@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Result};
 
 use crate::{
-    cl100k_base,
+    cl100k_base, cl100k_base_singleton,
     model::get_context_size,
-    o200k_base, p50k_base, p50k_edit, r50k_base,
+    o200k_base, o200k_base_singleton, p50k_base, p50k_base_singleton, p50k_edit,
+    p50k_edit_singleton, r50k_base, r50k_base_singleton,
     tokenizer::{get_tokenizer, Tokenizer},
     CoreBPE,
 };
@@ -102,7 +103,7 @@ pub fn num_tokens_from_messages(
     if tokenizer != Tokenizer::Cl100kBase && tokenizer != Tokenizer::O200kBase {
         anyhow::bail!("Chat completion is only supported chat models")
     }
-    let bpe = get_bpe_from_tokenizer(tokenizer)?;
+    let bpe = get_bpe_singleton_from_tokenizer(tokenizer);
 
     let (tokens_per_message, tokens_per_name) = if model.starts_with("gpt-3.5") {
         (
@@ -261,6 +262,40 @@ pub fn get_bpe_from_tokenizer(tokenizer: Tokenizer) -> Result<CoreBPE> {
         Tokenizer::P50kBase => p50k_base(),
         Tokenizer::P50kEdit => p50k_edit(),
         Tokenizer::Gpt2 => r50k_base(),
+    }
+}
+
+/// Returns a singleton instance of the CoreBPE tokenizer for the given tokenizer type.
+///
+/// This function is responsible for mapping a `Tokenizer` enum variant to the appropriate
+/// singleton `CoreBPE` instance, which is used for tokenization in different models.
+///
+/// # Arguments
+///
+/// * `tokenizer` - A `Tokenizer` enum variant representing the tokenizer for which a singleton `CoreBPE` instance should be retrieved.
+///
+/// # Examples
+///
+/// ```
+/// use tiktoken_rs::get_bpe_singleton_from_tokenizer;
+/// use tiktoken_rs::tokenizer::Tokenizer;
+///
+/// let tokenizer = Tokenizer::Cl100kBase;
+/// let bpe = get_bpe_singleton_from_tokenizer(tokenizer);
+/// ```
+///
+/// # Returns
+///
+/// Returns a reference to the singleton `CoreBPE` instance corresponding to the given tokenizer.
+/// The singleton is initialized once and reused for all subsequent calls with the same tokenizer.
+pub fn get_bpe_singleton_from_tokenizer(tokenizer: Tokenizer) -> &'static CoreBPE {
+    match tokenizer {
+        Tokenizer::O200kBase => o200k_base_singleton(),
+        Tokenizer::Cl100kBase => cl100k_base_singleton(),
+        Tokenizer::R50kBase => r50k_base_singleton(),
+        Tokenizer::P50kBase => p50k_base_singleton(),
+        Tokenizer::P50kEdit => p50k_edit_singleton(),
+        Tokenizer::Gpt2 => r50k_base_singleton(),
     }
 }
 
