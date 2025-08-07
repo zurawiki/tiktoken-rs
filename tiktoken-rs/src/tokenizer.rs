@@ -51,7 +51,7 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
 
 // Keep this in sync with:
 // https://github.com/openai/tiktoken/blob/63527649963def8c759b0f91f2eb69a40934e468/tiktoken/model.py#L22
-const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
+pub const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // reasoning
     ("o1", Tokenizer::O200kBase),
     ("o3", Tokenizer::O200kBase),
@@ -117,6 +117,27 @@ lazy_static! {
         });
         map
     };
+}
+
+/// Returns a list of all available model names.
+///
+/// This function returns all the model names that are supported by the tokenizer.
+/// The models are returned in the order they are defined in the `MODEL_TO_TOKENIZER` constant.
+///
+/// # Examples
+///
+/// ```
+/// use tiktoken_rs::tokenizer::list_available_models;
+/// let models = list_available_models();
+/// assert!(models.contains(&"gpt-4"));
+/// assert!(models.contains(&"gpt-3.5-turbo"));
+/// ```
+///
+/// # Returns
+///
+/// A vector of string slices containing all available model names.
+pub fn list_available_models() -> Vec<&'static str> {
+    MODEL_TO_TOKENIZER.iter().map(|(model, _)| *model).collect()
 }
 
 /// Returns the tokenizer type used by a model.
