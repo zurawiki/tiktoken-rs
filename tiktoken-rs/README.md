@@ -20,20 +20,34 @@ For full working examples for all supported features, see the [examples](https:/
 
 # CLI Usage
 
-The project includes a command-line interface for token counting:
+The project includes a command-line interface for token counting.
+
+## Installation
+
+```shell
+cargo install tiktoken-rs
+```
+
+## Usage
 
 ```bash
+# Get help
+tiktoken --help
+
+# List all available models
+tiktoken --list-models
+
 # Count tokens in text from stdin
-echo "Hello, world!" | cargo run --bin tiktoken
+echo 'Hello, world!' | tiktoken
 
 # Count tokens with a specific model
-echo "Hello, world!" | cargo run --bin tiktoken -- --model gpt-3.5-turbo
+echo 'Hello, world!' | tiktoken --model gpt-3.5-turbo
 
 # Count tokens with the o1 model
-echo "Hello, world!" | cargo run --bin tiktoken -- --model o1
+echo 'Hello, world!' | tiktoken --model o1
 
-# Get help
-cargo run --bin tiktoken -- --help
+# Output JSON with usage percentage
+echo 'Hello, world!' | tiktoken --json
 ```
 
 The CLI outputs JSON with token count, model used, context size, and remaining tokens:

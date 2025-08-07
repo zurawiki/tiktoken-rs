@@ -14,9 +14,9 @@ struct Args {
     #[arg(short, long, default_value = "gpt-4.1")]
     model: String,
 
-    /// Output format for the results
-    #[arg(short, long, default_value = "count")]
-    output: OutputFormat,
+    /// Output results in JSON format
+    #[arg(long)]
+    json: bool,
 
     /// List all available models and exit
     #[arg(long)]
@@ -25,14 +25,6 @@ struct Args {
     /// Input text to count tokens for (reads from stdin if not provided)
     #[arg(value_name = "TEXT")]
     text: Vec<String>,
-}
-
-#[derive(Clone, Copy, clap::ValueEnum)]
-enum OutputFormat {
-    /// Output just the token count (default)
-    Count,
-    /// Output detailed information in JSON format
-    Json,
 }
 
 #[derive(Serialize)]
@@ -96,21 +88,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         0.0
     };
 
-    // Output based on the specified format
-    match args.output {
-        OutputFormat::Count => {
-            println!("{token_count}");
-        }
-        OutputFormat::Json => {
-            let response = TokenCountResponse {
-                token_count,
-                model: args.model,
-                context_size,
-                remaining_tokens,
-                usage_percentage,
-            };
-            println!("{}", serde_json::to_string_pretty(&response)?);
-        }
+    // Output based on the json flag
+    if args.json {
+        let response = TokenCountResponse {
+            token_count,
+            model: args.model,
+            context_size,
+            remaining_tokens,
+            usage_percentage,
+        };
+        println!("{}", serde_json::to_string_pretty(&response)?);
+    } else {
+        println!("{token_count}");
     }
 
     Ok(())
