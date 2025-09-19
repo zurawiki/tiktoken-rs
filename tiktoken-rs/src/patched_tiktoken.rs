@@ -65,7 +65,14 @@ impl CoreBPE {
     ///
     /// If unicode validation is not wanted, see _decode_native.
     pub fn decode(&self, tokens: Vec<Rank>) -> Result<String> {
-        match String::from_utf8(self.decode_bytes(&tokens)?) {
+        self.decode_slice(&tokens)
+    }
+
+    /// Decode a slice of tokens into a valid UTF-8 String
+    ///
+    /// If unicode validation is not wanted, see _decode_native.
+    pub fn decode_slice(&self, tokens: &[Rank]) -> Result<String> {
+        match String::from_utf8(self.decode_bytes(tokens)?) {
             Ok(text) => Ok(text),
             Err(e) => Err(anyhow!("Unable to decode into a valid UTF-8 string: {}", e)),
         }
