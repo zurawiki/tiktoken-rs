@@ -22,7 +22,7 @@ async-openai = { version = "0.14.2", optional = true }
 base64 = "0.22.0"
 bstr = "1.6.2"
 dhat = { version = "0.3.2", optional = true }
-fancy-regex = "0.13.0"
+fancy-regex = "0.16.0"
 lazy_static = "1.4.0"
 regex = "1.10.3"
 rustc-hash = "1.1.0"
