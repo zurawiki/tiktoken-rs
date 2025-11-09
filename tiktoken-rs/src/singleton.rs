@@ -49,7 +49,7 @@ pub fn cl100k_base_singleton() -> &'static CoreBPE {
 }
 
 /// Returns a singleton instance of the o200k_base tokenizer.
-/// Use for GPT-4o models and other `o` series models like `o1`, `o3`, and `o4`.
+/// Use for GPT-5, GPT-4.1, GPT-4o, and other `o` series models like `o1`, `o3`, and `o4`.
 ///
 /// This function will only initialize the tokenizer once, and then return a reference the tokenizer
 pub fn o200k_base_singleton() -> &'static CoreBPE {
