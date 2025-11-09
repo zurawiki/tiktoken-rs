@@ -32,7 +32,7 @@ jobs:
         env:
             CARGO_BUILD_TARGET: ${{ matrix.target }}
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   submodules: recursive
 
@@ -51,7 +51,7 @@ jobs:
     lint:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   submodules: recursive
 
@@ -74,7 +74,7 @@ jobs:
             is_new_version: ${{ steps.check.outputs.is_new_version }}
             publish_tag: ${{ steps.check.outputs.publish_tag }}
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   submodules: recursive
 
