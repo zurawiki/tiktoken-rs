@@ -186,6 +186,7 @@ pub struct CoreBPE {
     pub(crate) special_tokens_encoder: HashMap<String, Rank>,
     pub(crate) decoder: HashMap<Rank, Vec<u8>>,
     pub(crate) special_tokens_decoder: HashMap<Rank, Vec<u8>>,
+    pub(crate) pat_kind: u8,
     pub(crate) regex_tls: Vec<Regex>,
     pub(crate) special_regex_tls: Vec<Regex>,
     #[allow(dead_code)]
