@@ -361,10 +361,13 @@ impl CoreBPE {
                     continue;
                 }
 
-                let m = O200K_FAST_REGEX.find_at(text, i);
-                let Some(m) = m else {
-                    count += self.count_ordinary_with_regex(slow_regex, &text[i..], &mut *scratch);
-                    break;
+                let m = match O200K_FAST_REGEX.find_at(text, i) {
+                    Some(m) => m,
+                    None => {
+                        count +=
+                            self.count_ordinary_with_regex(slow_regex, &text[i..], &mut *scratch);
+                        break;
+                    }
                 };
                 if m.start() != i {
                     count += self.count_ordinary_with_regex(slow_regex, &text[i..], &mut *scratch);
