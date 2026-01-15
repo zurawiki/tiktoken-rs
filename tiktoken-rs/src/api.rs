@@ -42,7 +42,7 @@ use crate::{
 pub fn get_completion_max_tokens(model: &str, prompt: &str) -> Result<usize> {
     let context_size = get_context_size(model);
     let bpe = get_bpe_from_model(model)?;
-    let prompt_tokens = bpe.encode_with_special_tokens(prompt).len();
+    let prompt_tokens = bpe.count_with_special_tokens(prompt);
     Ok(context_size.saturating_sub(prompt_tokens))
 }
 
@@ -119,14 +119,11 @@ pub fn num_tokens_from_messages(
     let mut num_tokens: i32 = 0;
     for message in messages {
         num_tokens += tokens_per_message;
-        num_tokens += bpe
-            .encode_with_special_tokens(&message.role.to_string())
-            .len() as i32;
-        num_tokens += bpe
-            .encode_with_special_tokens(&message.content.clone().unwrap_or_default())
-            .len() as i32;
+        num_tokens += bpe.count_with_special_tokens(message.role.as_str()) as i32;
+        num_tokens +=
+            bpe.count_with_special_tokens(message.content.as_deref().unwrap_or("")) as i32;
         if let Some(name) = &message.name {
-            num_tokens += bpe.encode_with_special_tokens(name).len() as i32;
+            num_tokens += bpe.count_with_special_tokens(name.as_str()) as i32;
             num_tokens += tokens_per_name;
         }
     }

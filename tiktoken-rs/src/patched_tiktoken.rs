@@ -442,6 +442,13 @@ impl CoreBPE {
     }
 
     pub fn count_with_special_tokens(&self, text: &str) -> usize {
+        // Fast path: if there are no special tokens in the input, counting with special tokens
+        // is identical to ordinary counting, so we can use `count_ordinary` (including its
+        // o200k_base ASCII fast path).
+        let special_regex = &self.special_regex_tls[thread_slot()];
+        if special_regex.find_from_pos(text, 0).unwrap().is_none() {
+            return self.count_ordinary(text);
+        }
         let allowed_special = self.special_tokens();
         self.count(text, &allowed_special)
     }
