@@ -168,3 +168,30 @@ fn test_unicode_roundtrip() {
     test_roundtrip(&o200k_base().unwrap(), "ひらがなカタカナ漢字");
     test_roundtrip(&o200k_harmony().unwrap(), "ひらがなカタカナ漢字");
 }
+
+fn assert_count_matches_encode(bpe: &CoreBPE, text: &str) {
+    assert_eq!(bpe.count_ordinary(text), bpe.encode_ordinary(text).len());
+    assert_eq!(
+        bpe.count_with_special_tokens(text),
+        bpe.encode_with_special_tokens(text).len()
+    );
+}
+
+#[test]
+fn count_matches_encode_basic() {
+    let bpe = o200k_base().unwrap();
+    assert_count_matches_encode(&bpe, "");
+    assert_count_matches_encode(&bpe, "Hello, world!");
+    assert_count_matches_encode(
+        &bpe,
+        "This is a test         with a lot of spaces<|endoftext|>",
+    );
+}
+
+#[test]
+fn count_matches_encode_o200k_fastpath_ascii() {
+    let bpe = o200k_base().unwrap();
+    let text = format!("{}hello{}", " ".repeat(8), "a".repeat(2048));
+    assert!(text.len() >= 1024 && text.is_ascii());
+    assert_count_matches_encode(&bpe, &text);
+}
