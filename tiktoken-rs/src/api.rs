@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Result};
 
 use crate::{
-    cl100k_base,
+    cl100k_base, cl100k_base_singleton,
     model::get_context_size,
-    o200k_base, o200k_harmony, p50k_base, p50k_edit, r50k_base,
+    o200k_base, o200k_base_singleton, o200k_harmony, o200k_harmony_singleton, p50k_base,
+    p50k_base_singleton, p50k_edit, p50k_edit_singleton, r50k_base, r50k_base_singleton,
     tokenizer::{get_tokenizer, Tokenizer},
     CoreBPE,
 };
@@ -41,7 +42,9 @@ use crate::{
 /// based on the given model and prompt.
 pub fn get_completion_max_tokens(model: &str, prompt: &str) -> Result<usize> {
     let context_size = get_context_size(model);
-    let bpe = get_bpe_from_model(model)?;
+    let tokenizer =
+        get_tokenizer(model).ok_or_else(|| anyhow!("No tokenizer found for model {}", model))?;
+    let bpe = bpe_singleton(tokenizer);
     let prompt_tokens = bpe.encode_with_special_tokens(prompt).len();
     Ok(context_size.saturating_sub(prompt_tokens))
 }
@@ -105,7 +108,7 @@ pub fn num_tokens_from_messages(
     {
         anyhow::bail!("Chat completion is only supported chat models")
     }
-    let bpe = get_bpe_from_tokenizer(tokenizer)?;
+    let bpe = bpe_singleton(tokenizer);
 
     let (tokens_per_message, tokens_per_name) = if model.starts_with("gpt-3.5") {
         (
@@ -193,6 +196,18 @@ pub fn get_chat_completion_max_tokens(
     let context_size = get_context_size(model);
     let prompt_tokens = num_tokens_from_messages(model, messages)?;
     Ok(context_size.saturating_sub(prompt_tokens))
+}
+
+fn bpe_singleton(tokenizer: Tokenizer) -> &'static CoreBPE {
+    match tokenizer {
+        Tokenizer::O200kHarmony => o200k_harmony_singleton(),
+        Tokenizer::O200kBase => o200k_base_singleton(),
+        Tokenizer::Cl100kBase => cl100k_base_singleton(),
+        Tokenizer::R50kBase => r50k_base_singleton(),
+        Tokenizer::P50kBase => p50k_base_singleton(),
+        Tokenizer::P50kEdit => p50k_edit_singleton(),
+        Tokenizer::Gpt2 => r50k_base_singleton(),
+    }
 }
 
 /// Returns a `CoreBPE` instance corresponding to the tokenizer used by the given model.
@@ -326,6 +341,41 @@ mod tests {
 
         let num_tokens = num_tokens_from_messages("gpt-4o-2024-05-13", &messages).unwrap();
         assert_eq!(num_tokens, 124);
+    }
+
+    #[test]
+    fn test_num_tokens_from_messages_repeated_calls_consistent() {
+        let messages = vec![ChatCompletionRequestMessage {
+            role: "user".to_string(),
+            name: None,
+            content: Some("Hello, world!".to_string()),
+            function_call: None,
+        }];
+        let first = num_tokens_from_messages("gpt-4o", &messages).unwrap();
+        for _ in 0..5 {
+            let result = num_tokens_from_messages("gpt-4o", &messages).unwrap();
+            assert_eq!(first, result);
+        }
+    }
+
+    #[test]
+    fn test_get_completion_max_tokens_repeated_calls_consistent() {
+        let first = get_completion_max_tokens("gpt-4o", "Hello, world!").unwrap();
+        for _ in 0..5 {
+            let result = get_completion_max_tokens("gpt-4o", "Hello, world!").unwrap();
+            assert_eq!(first, result);
+        }
+    }
+
+    #[test]
+    fn test_bpe_singleton_matches_fresh_bpe() {
+        let singleton = bpe_singleton(Tokenizer::Cl100kBase);
+        let fresh = get_bpe_from_tokenizer(Tokenizer::Cl100kBase).unwrap();
+        let text = "The quick brown fox jumps over the lazy dog";
+        assert_eq!(
+            singleton.encode_with_special_tokens(text),
+            fresh.encode_with_special_tokens(text),
+        );
     }
 
     #[test]
