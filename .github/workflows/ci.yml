@@ -8,6 +8,9 @@ on:
     schedule:
         - cron: "37 6 * * 1-5"
 
+permissions:
+    contents: read
+
 env:
     RUST_BACKTRACE: 1
     CARGO_TERM_COLOR: always
@@ -82,20 +85,19 @@ jobs:
 
             - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
 
-            - run: cargo install cargo-info
-
             - id: check
               run: |
                   CURRENT_VERSION="$(./scripts/get_current_version.sh tiktoken-rs)"
                   echo "Current version: $CURRENT_VERSION"
 
-                  EXISTING_VERSIONS="$(cargo info -VV tiktoken-rs 2>/dev/null | awk '/^ *VERSION[[:space:]]+RELEASED[[:space:]]+DOWNLOADS/ {in_tbl=1; next} in_tbl && /^[[:space:]]*$/ {in_tbl=0} in_tbl {print $1}')"
+                  PUBLISHED_VERSION="$(curl -sf https://crates.io/api/v1/crates/tiktoken-rs | jq -r '.crate.max_version')"
+                  echo "Published version: $PUBLISHED_VERSION"
 
-                  if echo "$EXISTING_VERSIONS" | grep -xq "$CURRENT_VERSION"; then
+                  if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
                     echo "Version $CURRENT_VERSION already published"
                     echo "is_new_version=no" >> $GITHUB_OUTPUT
                   else
-                    echo "Version $CURRENT_VERSION is new"
+                    echo "Version $CURRENT_VERSION is new (published: $PUBLISHED_VERSION)"
                     echo "is_new_version=yes" >> $GITHUB_OUTPUT
                     echo "publish_tag=v$CURRENT_VERSION" >> $GITHUB_OUTPUT
                   fi
@@ -104,6 +106,8 @@ jobs:
         name: Release
         needs: [test, lint, should-publish]
         if: needs.should-publish.outputs.is_new_version == 'yes' && github.ref == 'refs/heads/main'
+        permissions:
+            contents: write
         uses: ./.github/workflows/release.yml
         with:
             publish-tag: ${{ needs.should-publish.outputs.publish_tag }}
