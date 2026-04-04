@@ -39,7 +39,7 @@ jobs:
               with:
                   submodules: recursive
 
-            - uses: dtolnay/rust-toolchain@nightly
+            - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2 # nightly
               with:
                   targets: ${{ matrix.target }}
 
@@ -58,7 +58,7 @@ jobs:
               with:
                   submodules: recursive
 
-            - uses: dtolnay/rust-toolchain@nightly
+            - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2 # nightly
               with:
                   components: rustfmt, clippy
 
@@ -81,7 +81,7 @@ jobs:
               with:
                   submodules: recursive
 
-            - uses: dtolnay/rust-toolchain@nightly
+            - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2 # nightly
 
             - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2.8.0
 
