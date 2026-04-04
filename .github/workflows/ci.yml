@@ -90,14 +90,11 @@ jobs:
                   CURRENT_VERSION="$(./scripts/get_current_version.sh tiktoken-rs)"
                   echo "Current version: $CURRENT_VERSION"
 
-                  PUBLISHED_VERSION="$(curl -sf https://crates.io/api/v1/crates/tiktoken-rs | jq -r '.crate.max_version')"
-                  echo "Published version: $PUBLISHED_VERSION"
-
-                  if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
+                  if curl -sf "https://crates.io/api/v1/crates/tiktoken-rs/$CURRENT_VERSION" > /dev/null; then
                     echo "Version $CURRENT_VERSION already published"
                     echo "is_new_version=no" >> "$GITHUB_OUTPUT"
                   else
-                    echo "Version $CURRENT_VERSION is new (published: $PUBLISHED_VERSION)"
+                    echo "Version $CURRENT_VERSION is new"
                     echo "is_new_version=yes" >> "$GITHUB_OUTPUT"
                     echo "publish_tag=v$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
                   fi
