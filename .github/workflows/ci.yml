@@ -90,7 +90,9 @@ jobs:
                   CURRENT_VERSION="$(./scripts/get_current_version.sh tiktoken-rs)"
                   echo "Current version: $CURRENT_VERSION"
 
-                  if curl -sf "https://crates.io/api/v1/crates/tiktoken-rs/$CURRENT_VERSION" > /dev/null; then
+                  SPARSE_INDEX_URL="https://index.crates.io/ti/kt/tiktoken-rs"
+                  if curl -s --retry 3 -H "User-Agent: tiktoken-rs-ci (https://github.com/zurawiki/tiktoken-rs)" \
+                      "$SPARSE_INDEX_URL" | grep -q "\"vers\":\"$CURRENT_VERSION\""; then
                     echo "Version $CURRENT_VERSION already published"
                     echo "is_new_version=no" >> "$GITHUB_OUTPUT"
                   else
