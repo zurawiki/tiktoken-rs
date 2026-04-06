@@ -92,7 +92,7 @@ fn bench_cl100k_decode(b: &mut test::Bencher) {
     let tokens = bpe.encode_with_special_tokens(&content);
 
     b.iter(|| {
-        bpe.decode(tokens.clone()).unwrap();
+        bpe.decode(&tokens).unwrap();
     });
 }
 
@@ -112,6 +112,6 @@ fn bench_cl100k_decode_10x(b: &mut test::Bencher) {
     let tokens = bpe.encode_with_special_tokens(&content);
 
     b.iter(|| {
-        bpe.decode(tokens.clone()).unwrap();
+        bpe.decode(&tokens).unwrap();
     });
 }
