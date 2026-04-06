@@ -3,8 +3,8 @@ use anyhow::{anyhow, Result};
 use crate::{
     cl100k_base_singleton,
     model::get_context_size,
-    o200k_base_singleton, o200k_harmony_singleton,
-    p50k_base_singleton, p50k_edit_singleton, r50k_base_singleton,
+    o200k_base_singleton, o200k_harmony_singleton, p50k_base_singleton, p50k_edit_singleton,
+    r50k_base_singleton,
     tokenizer::{get_tokenizer, Tokenizer},
     CoreBPE,
 };
