@@ -92,7 +92,7 @@ jobs:
 
                   SPARSE_INDEX_URL="https://index.crates.io/ti/kt/tiktoken-rs"
                   if curl -s --retry 3 -H "User-Agent: tiktoken-rs-ci (https://github.com/zurawiki/tiktoken-rs)" \
-                      "$SPARSE_INDEX_URL" | grep -q "\"vers\":\"$CURRENT_VERSION\""; then
+                      "$SPARSE_INDEX_URL" | grep -Fq "\"vers\":\"$CURRENT_VERSION\""; then
                     echo "Version $CURRENT_VERSION already published"
                     echo "is_new_version=no" >> "$GITHUB_OUTPUT"
                   else
