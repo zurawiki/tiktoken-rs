@@ -122,22 +122,16 @@ pub fn num_tokens_from_messages(
     let mut num_tokens: i32 = 0;
     for message in messages {
         num_tokens += tokens_per_message;
-        num_tokens += bpe
-            .encode_with_special_tokens(&message.role)
-            .len() as i32;
+        num_tokens += bpe.encode_with_special_tokens(&message.role).len() as i32;
         if let Some(content) = &message.content {
-            num_tokens += bpe
-                .encode_with_special_tokens(content)
-                .len() as i32;
+            num_tokens += bpe.encode_with_special_tokens(content).len() as i32;
         }
         if let Some(name) = &message.name {
             num_tokens += bpe.encode_with_special_tokens(name).len() as i32;
             num_tokens += tokens_per_name;
         }
         if let Some(function_call) = &message.function_call {
-            num_tokens += bpe
-                .encode_with_special_tokens(&function_call.name)
-                .len() as i32;
+            num_tokens += bpe.encode_with_special_tokens(&function_call.name).len() as i32;
             num_tokens += bpe
                 .encode_with_special_tokens(&function_call.arguments)
                 .len() as i32;
@@ -390,7 +384,9 @@ mod tests {
             },
             ChatCompletionRequestMessage {
                 role: "function".to_string(),
-                content: Some("{\"temperature\": 72, \"conditions\": \"partly_cloudy\"}".to_string()),
+                content: Some(
+                    "{\"temperature\": 72, \"conditions\": \"partly_cloudy\"}".to_string(),
+                ),
                 name: Some("get_weather".to_string()),
                 function_call: None,
             },
