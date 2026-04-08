@@ -45,13 +45,11 @@ jobs:
               run: |
                   git tag "${{ inputs.publish-tag }}"
                   git push origin "${{ inputs.publish-tag }}"
-            - uses: taiki-e/create-gh-release-action@f67cf7b2dadd83d36b981e674a6b08063997ce68 # v1.10.0
-              name: Create github release
-              with:
-                  branch: main
-                  ref: refs/tags/${{ inputs.publish-tag }}
+            - name: Create github release
+              run: gh release create "$PUBLISH_TAG" --generate-notes --target main
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PUBLISH_TAG: ${{ inputs.publish-tag }}
 
     upload-binary:
         name: ${{ matrix.target }}
