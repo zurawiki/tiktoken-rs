@@ -122,15 +122,20 @@ pub fn num_tokens_from_messages(
     let mut num_tokens: i32 = 0;
     for message in messages {
         num_tokens += tokens_per_message;
-        num_tokens += bpe
-            .encode_with_special_tokens(&message.role.to_string())
-            .len() as i32;
-        num_tokens += bpe
-            .encode_with_special_tokens(&message.content.clone().unwrap_or_default())
-            .len() as i32;
+        num_tokens += bpe.encode_with_special_tokens(&message.role).len() as i32;
+        if let Some(content) = &message.content {
+            num_tokens += bpe.encode_with_special_tokens(content).len() as i32;
+        }
         if let Some(name) = &message.name {
             num_tokens += bpe.encode_with_special_tokens(name).len() as i32;
             num_tokens += tokens_per_name;
+        }
+        if let Some(function_call) = &message.function_call {
+            num_tokens += bpe.encode_with_special_tokens(&function_call.name).len() as i32;
+            num_tokens += bpe
+                .encode_with_special_tokens(&function_call.arguments)
+                .len() as i32;
+            num_tokens += 1;
         }
     }
     num_tokens += 3; // every reply is primed with <|start|>assistant<|message|>
@@ -345,6 +350,50 @@ mod tests {
         // Newer gpt-3.5 snapshots use (3, 1) like gpt-4, not (4, -1) like gpt-3.5-turbo-0301
         let num_tokens = num_tokens_from_messages("gpt-3.5-turbo-0125", &messages).unwrap();
         assert_eq!(num_tokens, 129);
+    }
+
+    #[test]
+    fn test_num_tokens_from_messages_with_function_call() {
+        let messages = vec![
+            ChatCompletionRequestMessage {
+                role: "system".to_string(),
+                content: Some("You are a friendly chatbot.\n".to_string()),
+                name: None,
+                function_call: None,
+            },
+            ChatCompletionRequestMessage {
+                role: "assistant".to_string(),
+                content: Some("Hello, I am a friendly chatbot!\n".to_string()),
+                name: None,
+                function_call: None,
+            },
+            ChatCompletionRequestMessage {
+                role: "user".to_string(),
+                content: Some("What is the weather in New York?".to_string()),
+                name: None,
+                function_call: None,
+            },
+            ChatCompletionRequestMessage {
+                role: "assistant".to_string(),
+                content: Some(String::new()),
+                name: None,
+                function_call: Some(FunctionCall {
+                    name: "get_weather".to_string(),
+                    arguments: "{\n  \"city\": \"New York\"\n}".to_string(),
+                }),
+            },
+            ChatCompletionRequestMessage {
+                role: "function".to_string(),
+                content: Some(
+                    "{\"temperature\": 72, \"conditions\": \"partly_cloudy\"}".to_string(),
+                ),
+                name: Some("get_weather".to_string()),
+                function_call: None,
+            },
+        ];
+        // Validated against OpenAI API response (issue #40)
+        let num_tokens = num_tokens_from_messages("gpt-4-0613", &messages).unwrap();
+        assert_eq!(num_tokens, 78);
     }
 
     #[test]
