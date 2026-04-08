@@ -43,8 +43,14 @@ pub fn get_context_size(model: &str) -> usize {
     if starts_with_any!(model, "gpt-5.4") {
         return 1_050_000;
     }
+    if starts_with_any!(model, "gpt-5.3-codex-spark") {
+        return 128_000;
+    }
     if starts_with_any!(model, "gpt-5") {
         return 400_000;
+    }
+    if starts_with_any!(model, "codex-mini") {
+        return 200_000;
     }
     if starts_with_any!(model, "gpt-oss") {
         return 131_072;

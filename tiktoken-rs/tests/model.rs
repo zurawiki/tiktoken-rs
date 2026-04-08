@@ -35,6 +35,16 @@ fn test_gpt5_context_size() {
     assert_eq!(get_context_size("gpt-5.4-pro"), 1_050_000);
     assert_eq!(get_context_size("gpt-5.4-mini"), 400_000);
     assert_eq!(get_context_size("gpt-5.4-nano"), 400_000);
+    // gpt-5.2 / 5.3 / codex variants
+    assert_eq!(get_context_size("gpt-5.2"), 400_000);
+    assert_eq!(get_context_size("gpt-5.2-pro"), 400_000);
+    assert_eq!(get_context_size("gpt-5.2-codex"), 400_000);
+    assert_eq!(get_context_size("gpt-5.3-codex"), 400_000);
+    assert_eq!(get_context_size("gpt-5.3-codex-spark"), 128_000);
+    assert_eq!(get_context_size("gpt-5.1-codex"), 400_000);
+    assert_eq!(get_context_size("gpt-5.1-codex-mini"), 400_000);
+    assert_eq!(get_context_size("gpt-5-codex"), 400_000);
+    assert_eq!(get_context_size("codex-mini-latest"), 200_000);
 }
 
 #[test]
