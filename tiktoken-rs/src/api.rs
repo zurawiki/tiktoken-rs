@@ -45,7 +45,7 @@ pub fn get_completion_max_tokens(model: &str, prompt: &str) -> Result<usize> {
     let tokenizer =
         get_tokenizer(model).ok_or_else(|| anyhow!("No tokenizer found for model {}", model))?;
     let bpe = bpe_singleton(tokenizer);
-    let prompt_tokens = bpe.encode_with_special_tokens(prompt).len();
+    let prompt_tokens = bpe.count_with_special_tokens(prompt);
     Ok(context_size.saturating_sub(prompt_tokens))
 }
 
@@ -138,28 +138,26 @@ pub fn num_tokens_from_messages(
     let mut num_tokens: i32 = 0;
     for message in messages {
         num_tokens += tokens_per_message;
-        num_tokens += bpe.encode_with_special_tokens(&message.role).len() as i32;
+        num_tokens += bpe.count_with_special_tokens(&message.role) as i32;
         if let Some(content) = &message.content {
-            num_tokens += bpe.encode_with_special_tokens(content).len() as i32;
+            num_tokens += bpe.count_with_special_tokens(content) as i32;
         }
         if let Some(name) = &message.name {
-            num_tokens += bpe.encode_with_special_tokens(name).len() as i32;
+            num_tokens += bpe.count_with_special_tokens(name) as i32;
             num_tokens += tokens_per_name;
         }
         if let Some(function_call) = &message.function_call {
-            num_tokens += bpe.encode_with_special_tokens(&function_call.name).len() as i32;
-            num_tokens += bpe
-                .encode_with_special_tokens(&function_call.arguments)
-                .len() as i32;
+            num_tokens += bpe.count_with_special_tokens(&function_call.name) as i32;
+            num_tokens += bpe.count_with_special_tokens(&function_call.arguments) as i32;
             num_tokens += FUNCTION_CALL_OVERHEAD;
         }
         for tool_call in &message.tool_calls {
-            num_tokens += bpe.encode_with_special_tokens(&tool_call.name).len() as i32;
-            num_tokens += bpe.encode_with_special_tokens(&tool_call.arguments).len() as i32;
+            num_tokens += bpe.count_with_special_tokens(&tool_call.name) as i32;
+            num_tokens += bpe.count_with_special_tokens(&tool_call.arguments) as i32;
             num_tokens += FUNCTION_CALL_OVERHEAD;
         }
         if let Some(refusal) = &message.refusal {
-            num_tokens += bpe.encode_with_special_tokens(refusal).len() as i32;
+            num_tokens += bpe.count_with_special_tokens(refusal) as i32;
         }
     }
     num_tokens += REPLY_PRIMING;

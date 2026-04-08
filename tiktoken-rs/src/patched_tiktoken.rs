@@ -3,6 +3,7 @@ use anyhow::anyhow;
 use anyhow::Result;
 use fancy_regex::Regex;
 use rustc_hash::FxHashMap as HashMap;
+use std::collections::HashSet;
 
 /// Rust API
 impl CoreBPE {
@@ -55,6 +56,34 @@ impl CoreBPE {
                 .collect(),
             sorted_token_bytes,
         })
+    }
+
+    // ====================
+    // Counting
+    // ====================
+
+    /// Returns the number of tokens that `encode_ordinary` would produce,
+    /// without returning the token list itself.
+    ///
+    /// Equivalent to `self.encode_ordinary(text).len()`.
+    pub fn count_ordinary(&self, text: &str) -> usize {
+        self.encode_ordinary(text).len()
+    }
+
+    /// Returns the number of tokens that `encode` would produce for the given
+    /// `allowed_special` set, without returning the token list itself.
+    ///
+    /// Equivalent to `self.encode(text, allowed_special).0.len()`.
+    pub fn count(&self, text: &str, allowed_special: &HashSet<&str>) -> usize {
+        self.encode(text, allowed_special).0.len()
+    }
+
+    /// Returns the number of tokens that `encode_with_special_tokens` would
+    /// produce, without returning the token list itself.
+    ///
+    /// Equivalent to `self.encode_with_special_tokens(text).len()`.
+    pub fn count_with_special_tokens(&self, text: &str) -> usize {
+        self.encode_with_special_tokens(text).len()
     }
 
     // ====================
