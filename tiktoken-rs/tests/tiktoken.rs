@@ -257,3 +257,34 @@ fn test_unicode_roundtrip() {
     test_roundtrip(&o200k_base().unwrap(), "ひらがなカタカナ漢字");
     test_roundtrip(&o200k_harmony().unwrap(), "ひらがなカタカナ漢字");
 }
+
+fn assert_count_matches_encode(bpe: &CoreBPE, text: &str) {
+    assert_eq!(bpe.count_ordinary(text), bpe.encode_ordinary(text).len());
+    assert_eq!(
+        bpe.count_with_special_tokens(text),
+        bpe.encode_with_special_tokens(text).len()
+    );
+}
+
+#[test]
+fn count_matches_encode() {
+    let texts = [
+        "hello world",
+        "",
+        "🍌This is a sentence",
+        "我想借几本汉语书",
+        &"ab ".repeat(512),
+    ];
+    let bpes: Vec<CoreBPE> = vec![
+        r50k_base().unwrap(),
+        p50k_base().unwrap(),
+        cl100k_base().unwrap(),
+        o200k_base().unwrap(),
+        o200k_harmony().unwrap(),
+    ];
+    for bpe in &bpes {
+        for text in &texts {
+            assert_count_matches_encode(bpe, text);
+        }
+    }
+}
