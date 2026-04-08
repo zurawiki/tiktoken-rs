@@ -110,7 +110,7 @@ pub fn num_tokens_from_messages(
     }
     let bpe = bpe_singleton(tokenizer);
 
-    let (tokens_per_message, tokens_per_name) = if model.starts_with("gpt-3.5") {
+    let (tokens_per_message, tokens_per_name) = if model == "gpt-3.5-turbo-0301" {
         (
             4,  // every message follows <im_start>{role/name}\n{content}<im_end>\n
             -1, // if there's a name, the role is omitted
@@ -341,6 +341,10 @@ mod tests {
 
         let num_tokens = num_tokens_from_messages("gpt-4o-2024-05-13", &messages).unwrap();
         assert_eq!(num_tokens, 124);
+
+        // Newer gpt-3.5 snapshots use (3, 1) like gpt-4, not (4, -1) like gpt-3.5-turbo-0301
+        let num_tokens = num_tokens_from_messages("gpt-3.5-turbo-0125", &messages).unwrap();
+        assert_eq!(num_tokens, 129);
     }
 
     #[test]
