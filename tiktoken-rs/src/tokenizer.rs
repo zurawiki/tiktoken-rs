@@ -36,6 +36,7 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("o3-", Tokenizer::O200kBase),
     ("o4-", Tokenizer::O200kBase),
     // chat
+    ("gpt-5.4-", Tokenizer::O200kBase),
     ("gpt-5-", Tokenizer::O200kBase),
     ("gpt-4.5-", Tokenizer::O200kBase),
     ("gpt-4.1-", Tokenizer::O200kBase),
@@ -45,12 +46,6 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("gpt-3.5-turbo-", Tokenizer::Cl100kBase), // e.g, gpt-3.5-turbo-0301, -0401, etc.
     ("gpt-35-turbo-", Tokenizer::Cl100kBase), // Azure deployment name
     ("gpt-oss-", Tokenizer::O200kHarmony),
-    // fine-tuned
-    ("ft:gpt-4o", Tokenizer::O200kBase),
-    ("ft:gpt-4", Tokenizer::Cl100kBase),
-    ("ft:gpt-3.5-turbo", Tokenizer::Cl100kBase),
-    ("ft:davinci-002", Tokenizer::Cl100kBase),
-    ("ft:babbage-002", Tokenizer::Cl100kBase),
 ];
 
 // Keep this in sync with:
@@ -61,7 +56,10 @@ const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("o3", Tokenizer::O200kBase),
     ("o4", Tokenizer::O200kBase),
     // chat
+    ("gpt-5.4", Tokenizer::O200kBase),
     ("gpt-5", Tokenizer::O200kBase),
+    ("gpt-5-mini", Tokenizer::O200kBase),
+    ("gpt-5-nano", Tokenizer::O200kBase),
     ("gpt-4.1", Tokenizer::O200kBase),
     ("chatgpt-4o-latest", Tokenizer::O200kBase),
     ("gpt-4o", Tokenizer::O200kBase),
@@ -148,6 +146,10 @@ lazy_static! {
 /// If a tokenizer is found for the given model name, the function returns an `Option` containing the tokenizer
 /// enum variant; otherwise, it returns `None`.
 pub fn get_tokenizer(model_name: &str) -> Option<Tokenizer> {
+    if let Some(rest) = model_name.strip_prefix("ft:") {
+        let base = rest.split(':').next().unwrap_or(rest);
+        return get_tokenizer(base);
+    }
     if let Some(tokenizer) = MODEL_TO_TOKENIZER_MAP.get(model_name) {
         return Some(*tokenizer);
     }
@@ -167,15 +169,21 @@ mod tests {
 
     #[test]
     fn test_get_tokenizer() {
+        // GPT-5 series
         assert_eq!(get_tokenizer("gpt-5"), Some(Tokenizer::O200kBase));
-        assert_eq!(get_tokenizer("gpt-oss-20b"), Some(Tokenizer::O200kHarmony));
-        assert_eq!(get_tokenizer("gpt-oss-120b"), Some(Tokenizer::O200kHarmony));
+        assert_eq!(get_tokenizer("gpt-5-mini"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("gpt-5-nano"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("gpt-5.4"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("gpt-5.4-mini"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("gpt-5.4-pro"), Some(Tokenizer::O200kBase));
+        // GPT-4 series
+        assert_eq!(get_tokenizer("gpt-4o"), Some(Tokenizer::O200kBase));
         assert_eq!(
-            get_tokenizer("chatgpt-4o-latest"),
+            get_tokenizer("gpt-4o-2024-05-13"),
             Some(Tokenizer::O200kBase)
         );
         assert_eq!(
-            get_tokenizer("gpt-4o-2024-05-13"),
+            get_tokenizer("chatgpt-4o-latest"),
             Some(Tokenizer::O200kBase)
         );
         assert_eq!(
@@ -187,6 +195,7 @@ mod tests {
             get_tokenizer("gpt-4-1106-preview"),
             Some(Tokenizer::Cl100kBase)
         );
+        // GPT-3.5 series
         assert_eq!(
             get_tokenizer("gpt-3.5-turbo-0125"),
             Some(Tokenizer::Cl100kBase),
@@ -197,18 +206,36 @@ mod tests {
         );
         assert_eq!(get_tokenizer("gpt-3.5-turbo"), Some(Tokenizer::Cl100kBase));
         assert_eq!(
+            get_tokenizer("gpt-3.5-turbo-0301"),
+            Some(Tokenizer::Cl100kBase)
+        );
+        // gpt-oss
+        assert_eq!(get_tokenizer("gpt-oss-20b"), Some(Tokenizer::O200kHarmony));
+        assert_eq!(get_tokenizer("gpt-oss-120b"), Some(Tokenizer::O200kHarmony));
+        // Fine-tuned (ft: prefix stripped, then resolved via base model)
+        assert_eq!(
             get_tokenizer("ft:gpt-3.5-turbo:XXXXXX:2023-11-11"),
             Some(Tokenizer::Cl100kBase)
         );
         assert_eq!(
-            get_tokenizer("gpt-3.5-turbo-0301"),
+            get_tokenizer("ft:gpt-4o:org:name:id"),
+            Some(Tokenizer::O200kBase)
+        );
+        assert_eq!(
+            get_tokenizer("ft:gpt-5:org:name"),
+            Some(Tokenizer::O200kBase)
+        );
+        assert_eq!(
+            get_tokenizer("ft:davinci-002:org"),
             Some(Tokenizer::Cl100kBase)
         );
+        // Deprecated / legacy
         assert_eq!(get_tokenizer("text-davinci-003"), Some(Tokenizer::P50kBase));
         assert_eq!(
             get_tokenizer("code-search-ada-code-001"),
             Some(Tokenizer::R50kBase)
         );
+        // Unknown
         assert_eq!(get_tokenizer("foo"), None);
     }
 }

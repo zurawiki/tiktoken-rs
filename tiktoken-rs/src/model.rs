@@ -37,11 +37,20 @@ pub fn get_context_size(model: &str) -> usize {
         let base = rest.split(':').next().unwrap_or(rest);
         return get_context_size(base);
     }
+    if starts_with_any!(model, "gpt-5.4-mini", "gpt-5.4-nano") {
+        return 400_000;
+    }
+    if starts_with_any!(model, "gpt-5.4") {
+        return 1_050_000;
+    }
     if starts_with_any!(model, "gpt-5") {
         return 400_000;
     }
     if starts_with_any!(model, "gpt-oss") {
         return 131_072;
+    }
+    if starts_with_any!(model, "o1-mini", "o1-preview") {
+        return 128_000;
     }
     if starts_with_any!(model, "o1", "o3", "o4") {
         return 200_000;
@@ -49,7 +58,10 @@ pub fn get_context_size(model: &str) -> usize {
     if starts_with_any!(model, "gpt-4.1") {
         return 1_047_576;
     }
-    if starts_with_any!(model, "gpt-4o") {
+    if starts_with_any!(model, "chatgpt-4o", "gpt-4o") {
+        return 128_000;
+    }
+    if starts_with_any!(model, "gpt-4.5") {
         return 128_000;
     }
     if starts_with_any!(model, "gpt-4-turbo-") {
