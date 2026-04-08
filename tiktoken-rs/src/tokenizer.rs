@@ -57,11 +57,7 @@ const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("o3", Tokenizer::O200kBase),
     ("o4", Tokenizer::O200kBase),
     // chat
-    ("gpt-5.4", Tokenizer::O200kBase),
-    ("gpt-5.2", Tokenizer::O200kBase),
     ("gpt-5", Tokenizer::O200kBase),
-    ("gpt-5-mini", Tokenizer::O200kBase),
-    ("gpt-5-nano", Tokenizer::O200kBase),
     ("gpt-4.1", Tokenizer::O200kBase),
     ("chatgpt-4o-latest", Tokenizer::O200kBase),
     ("gpt-4o", Tokenizer::O200kBase),
@@ -181,6 +177,11 @@ mod tests {
         assert_eq!(get_tokenizer("gpt-5.2"), Some(Tokenizer::O200kBase));
         assert_eq!(get_tokenizer("gpt-5.2-pro"), Some(Tokenizer::O200kBase));
         assert_eq!(get_tokenizer("gpt-5.2-codex"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("gpt-5.1-codex"), Some(Tokenizer::O200kBase));
+        assert_eq!(
+            get_tokenizer("gpt-5.1-codex-mini"),
+            Some(Tokenizer::O200kBase)
+        );
         assert_eq!(get_tokenizer("gpt-5.3-codex"), Some(Tokenizer::O200kBase));
         assert_eq!(
             get_tokenizer("gpt-5.3-codex-spark"),

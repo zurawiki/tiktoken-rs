@@ -115,14 +115,14 @@ println!("max_tokens: {}", max_tokens);
 
 `tiktoken` supports these encodings used by OpenAI models:
 
-| Encoding name           | OpenAI models                                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------------------------ |
-| `o200k_harmony`         | `gpt-oss-20b`, `gpt-oss-120b`                                                                    |
-| `o200k_base`            | `gpt-5.4`, `gpt-5`, `gpt-4.1`, `gpt-4.5-*`, `gpt-4o`, `o4-mini`, `o3`, `o1`, `chatgpt-4o-latest` |
-| `cl100k_base`           | `gpt-4`, `gpt-3.5-turbo`, `text-embedding-ada-002`, `text-embedding-3-*`                         |
-| `p50k_base`             | Code models, `text-davinci-002`, `text-davinci-003`                                              |
-| `p50k_edit`             | Edit models like `text-davinci-edit-001`, `code-davinci-edit-001`                                |
-| `r50k_base` (or `gpt2`) | GPT-3 models like `davinci`                                                                      |
+| Encoding name           | OpenAI models                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `o200k_harmony`         | `gpt-oss-20b`, `gpt-oss-120b`                                                  |
+| `o200k_base`            | GPT-5 series, `o1`/`o3`/`o4` series, `gpt-4o`, `gpt-4.5`, `gpt-4.1`, `codex-*` |
+| `cl100k_base`           | `gpt-4`, `gpt-3.5-turbo`, `text-embedding-ada-002`, `text-embedding-3-*`       |
+| `p50k_base`             | Code models, `text-davinci-002`, `text-davinci-003`                            |
+| `p50k_edit`             | Edit models like `text-davinci-edit-001`, `code-davinci-edit-001`              |
+| `r50k_base` (or `gpt2`) | GPT-3 models like `davinci`                                                    |
 
 ### Context sizes
 
