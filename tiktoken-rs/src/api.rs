@@ -1,10 +1,10 @@
 use anyhow::{anyhow, Result};
 
 use crate::{
-    cl100k_base, cl100k_base_singleton,
+    cl100k_base_singleton,
     model::get_context_size,
-    o200k_base, o200k_base_singleton, o200k_harmony, o200k_harmony_singleton, p50k_base,
-    p50k_base_singleton, p50k_edit, p50k_edit_singleton, r50k_base, r50k_base_singleton,
+    o200k_base_singleton, o200k_harmony_singleton, p50k_base_singleton, p50k_edit_singleton,
+    r50k_base_singleton,
     tokenizer::{get_tokenizer, Tokenizer},
     CoreBPE,
 };
@@ -242,12 +242,11 @@ fn bpe_singleton(tokenizer: Tokenizer) -> &'static CoreBPE {
 ///
 /// # Returns
 ///
-/// If successful, the function returns a `Result` containing the `CoreBPE` instance corresponding to the tokenizer used by the given model.
-pub fn get_bpe_from_model(model: &str) -> Result<CoreBPE> {
+/// If successful, the function returns a `Result` containing a reference to the `CoreBPE` instance corresponding to the tokenizer used by the given model.
+pub fn get_bpe_from_model(model: &str) -> Result<&'static CoreBPE> {
     let tokenizer =
         get_tokenizer(model).ok_or_else(|| anyhow!("No tokenizer found for model {}", model))?;
-    let bpe = get_bpe_from_tokenizer(tokenizer)?;
-    Ok(bpe)
+    get_bpe_from_tokenizer(tokenizer)
 }
 
 /// Returns a `CoreBPE` instance corresponding to the given tokenizer.
@@ -275,17 +274,9 @@ pub fn get_bpe_from_model(model: &str) -> Result<CoreBPE> {
 ///
 /// # Returns
 ///
-/// If successful, the function returns a `Result` containing the `CoreBPE` instance corresponding to the given tokenizer.
-pub fn get_bpe_from_tokenizer(tokenizer: Tokenizer) -> Result<CoreBPE> {
-    match tokenizer {
-        Tokenizer::O200kHarmony => o200k_harmony(),
-        Tokenizer::O200kBase => o200k_base(),
-        Tokenizer::Cl100kBase => cl100k_base(),
-        Tokenizer::R50kBase => r50k_base(),
-        Tokenizer::P50kBase => p50k_base(),
-        Tokenizer::P50kEdit => p50k_edit(),
-        Tokenizer::Gpt2 => r50k_base(),
-    }
+/// If successful, the function returns a `Result` containing a reference to the `CoreBPE` instance corresponding to the given tokenizer.
+pub fn get_bpe_from_tokenizer(tokenizer: Tokenizer) -> Result<&'static CoreBPE> {
+    Ok(bpe_singleton(tokenizer))
 }
 
 #[cfg(test)]
