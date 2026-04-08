@@ -25,98 +25,98 @@ macro_rules! starts_with_any {
 /// use tiktoken_rs::model::get_context_size;
 /// let model = "gpt-4-32k";
 /// let context_size = get_context_size(model);
-/// assert_eq!(context_size, 32768);
+/// assert_eq!(context_size, Some(32768));
 /// ```
 ///
-/// # Note
+/// # Returns
 ///
-/// Returns a default of 4096 for unrecognized models. Use [`crate::tokenizer::get_tokenizer`]
-/// to check if a model is recognized before relying on this value.
-pub fn get_context_size(model: &str) -> usize {
+/// Returns `None` if the model is not recognized. Callers should handle this case
+/// explicitly rather than assuming a default context size.
+pub fn get_context_size(model: &str) -> Option<usize> {
     if let Some(rest) = model.strip_prefix("ft:") {
         let base = rest.split(':').next().unwrap_or(rest);
         return get_context_size(base);
     }
     if starts_with_any!(model, "gpt-5.4-mini", "gpt-5.4-nano") {
-        return 400_000;
+        return Some(400_000);
     }
     if starts_with_any!(model, "gpt-5.4") {
-        return 1_050_000;
+        return Some(1_050_000);
     }
     if starts_with_any!(model, "gpt-5.3-codex-spark") {
-        return 128_000;
+        return Some(128_000);
     }
     if starts_with_any!(model, "gpt-5") {
-        return 400_000;
+        return Some(400_000);
     }
     if starts_with_any!(model, "codex-mini") {
-        return 200_000;
+        return Some(200_000);
     }
     if starts_with_any!(model, "gpt-oss") {
-        return 131_072;
+        return Some(131_072);
     }
     if starts_with_any!(model, "o1-mini", "o1-preview") {
-        return 128_000;
+        return Some(128_000);
     }
     if starts_with_any!(model, "o1", "o3", "o4") {
-        return 200_000;
+        return Some(200_000);
     }
     if starts_with_any!(model, "gpt-4.1") {
-        return 1_047_576;
+        return Some(1_047_576);
     }
     if starts_with_any!(model, "chatgpt-4o", "gpt-4o") {
-        return 128_000;
+        return Some(128_000);
     }
     if starts_with_any!(model, "gpt-4.5") {
-        return 128_000;
+        return Some(128_000);
     }
     if starts_with_any!(model, "gpt-4-turbo-") {
-        return 128_000;
+        return Some(128_000);
     }
     if starts_with_any!(model, "gpt-4-0125") {
-        return 128_000;
+        return Some(128_000);
     }
     if starts_with_any!(model, "gpt-4-1106") {
-        return 128_000;
+        return Some(128_000);
     }
     if starts_with_any!(model, "gpt-4-32k") {
-        return 32_768;
+        return Some(32_768);
     }
     if starts_with_any!(model, "gpt-4") {
-        return 8192;
+        return Some(8192);
     }
     if starts_with_any!(model, "gpt-3.5-turbo-0125") {
-        return 16_385;
+        return Some(16_385);
     }
     if starts_with_any!(model, "gpt-3.5-turbo-1106") {
-        return 16_385;
+        return Some(16_385);
     }
     if starts_with_any!(model, "gpt-3.5-turbo-16k") {
-        return 16_385;
+        return Some(16_385);
     }
     if starts_with_any!(model, "gpt-3.5-turbo") {
-        return 16_385;
+        return Some(16_385);
     }
     if starts_with_any!(model, "text-davinci-002", "text-davinci-003") {
-        return 4097;
+        return Some(4097);
     }
     if starts_with_any!(model, "ada", "babbage", "curie") {
-        return 2049;
+        return Some(2049);
     }
     if starts_with_any!(model, "code-cushman-001") {
-        return 2048;
+        return Some(2048);
     }
     if starts_with_any!(model, "code-davinci-002") {
-        return 8001;
+        return Some(8001);
     }
     if starts_with_any!(model, "davinci") {
-        return 2049;
+        return Some(2049);
     }
     if starts_with_any!(model, "text-ada-001", "text-babbage-001", "text-curie-001") {
-        return 2049;
+        return Some(2049);
     }
     if starts_with_any!(model, "text-embedding-ada-002") {
-        return 8192;
+        return Some(8192);
     }
-    4096
+    None
 }
