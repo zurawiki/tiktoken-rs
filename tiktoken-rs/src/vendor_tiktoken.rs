@@ -207,7 +207,7 @@ impl CoreBPE {
     /// Decodes tokens into a list of bytes.
     ///
     /// The bytes are not gauranteed to be a valid utf-8 string.
-    pub(crate) fn decode_bytes(&self, tokens: &[Rank]) -> Result<Vec<u8>, DecodeKeyError> {
+    pub fn decode_bytes(&self, tokens: &[Rank]) -> Result<Vec<u8>, DecodeKeyError> {
         let mut ret = Vec::with_capacity(tokens.len() * 2);
         for &token in tokens {
             let token_bytes = match self.decoder.get(&token) {

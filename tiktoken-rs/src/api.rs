@@ -295,7 +295,7 @@ mod tests {
     #[test]
     fn test_get_bpe_from_tokenizer() {
         let bpe = get_bpe_from_tokenizer(Tokenizer::Cl100kBase).unwrap();
-        assert_eq!(bpe.decode(vec!(15339)).unwrap(), "hello");
+        assert_eq!(bpe.decode(&[15339]).unwrap(), "hello");
     }
 
     #[test]

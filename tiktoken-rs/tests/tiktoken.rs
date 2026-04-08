@@ -17,7 +17,7 @@ fn very_simple_test() {
 
 fn test_roundtrip(bpe: &CoreBPE, text: &str) {
     let tokens = bpe.encode_with_special_tokens(text);
-    let decoded = bpe.decode(tokens).unwrap();
+    let decoded = bpe.decode(&tokens).unwrap();
     assert_eq!(decoded, text);
 }
 
@@ -134,7 +134,7 @@ fn p50k_base_singleton_test() {
     // println!("p50k_base_singleton load 1: {:?}", now.elapsed());
     // let now = std::time::Instant::now();
     let tokens = bpe1.encode_with_special_tokens("This is a test         with a lot of spaces");
-    bpe1.decode(tokens).unwrap();
+    bpe1.decode(&tokens).unwrap();
     // println!("p50k_base encode/decode 1: {:?}", now.elapsed());
 
     //let now = std::time::Instant::now();
@@ -142,8 +142,18 @@ fn p50k_base_singleton_test() {
     // println!("p50k_base_singleton load 2: {:?}", now.elapsed());
     // let now = std::time::Instant::now();
     let tokens = bpe2.encode_with_special_tokens("This is a test         with a lot of spaces");
-    bpe2.decode(tokens).unwrap();
+    bpe2.decode(&tokens).unwrap();
     // println!("p50k_base encode/decode 2: {:?}", now.elapsed());
+}
+
+#[test]
+fn test_decode_bytes_non_utf8() {
+    let bpe = r50k_base().unwrap();
+    // Token 49426 in GPT-2/r50k_base is not valid UTF-8 on its own
+    assert!(bpe.decode(&[49426]).is_err());
+    // decode_bytes should succeed and return the raw bytes
+    let bytes = bpe.decode_bytes(&[49426]).unwrap();
+    assert!(!bytes.is_empty());
 }
 
 #[test]
