@@ -5,6 +5,55 @@ use fancy_regex::Regex;
 use rustc_hash::FxHashMap as HashMap;
 use std::collections::HashSet;
 
+mod sealed {
+    pub trait Sealed {}
+    impl Sealed for super::Rank {}
+    impl Sealed for usize {}
+    impl Sealed for u64 {}
+    impl Sealed for i64 {}
+}
+
+/// Lossless conversion from [`Rank`] (`u32`) to a wider integer type.
+///
+/// This trait is used by the generic encoding methods
+/// ([`encode_ordinary_as`](CoreBPE::encode_ordinary_as), etc.) so callers
+/// can obtain tokens in whichever integer type their downstream code
+/// expects (e.g. `usize` for indexing, `u64` for ML frameworks).
+///
+/// This trait is sealed and cannot be implemented outside this crate.
+/// Implementations exist for `u32` (identity), `usize`, `u64`, and `i64`.
+pub trait FromRank: sealed::Sealed {
+    fn from_rank(rank: Rank) -> Self;
+}
+
+impl FromRank for Rank {
+    #[inline]
+    fn from_rank(rank: Rank) -> Self {
+        rank
+    }
+}
+
+impl FromRank for usize {
+    #[inline]
+    fn from_rank(rank: Rank) -> Self {
+        rank as usize
+    }
+}
+
+impl FromRank for u64 {
+    #[inline]
+    fn from_rank(rank: Rank) -> Self {
+        u64::from(rank)
+    }
+}
+
+impl FromRank for i64 {
+    #[inline]
+    fn from_rank(rank: Rank) -> Self {
+        i64::from(rank)
+    }
+}
+
 /// Rust API
 impl CoreBPE {
     // ====================
@@ -56,6 +105,60 @@ impl CoreBPE {
                 .collect(),
             sorted_token_bytes,
         })
+    }
+
+    // ====================
+    // Generic encoding
+    // ====================
+
+    /// Like [`encode_ordinary`](CoreBPE::encode_ordinary), but converts each
+    /// token from [`Rank`] (`u32`) into `T`.
+    ///
+    /// This is useful when you need tokens in a different integer type
+    /// (e.g. `usize` for indexing, or `u64` for ML frameworks).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiktoken_rs::cl100k_base;
+    ///
+    /// let bpe = cl100k_base().unwrap();
+    /// let tokens: Vec<usize> = bpe.encode_ordinary_as("hello world");
+    /// ```
+    pub fn encode_ordinary_as<T: FromRank>(&self, text: &str) -> Vec<T> {
+        self.encode_ordinary(text).into_iter().map(T::from_rank).collect()
+    }
+
+    /// Like [`encode_with_special_tokens`](CoreBPE::encode_with_special_tokens),
+    /// but converts each token from [`Rank`] (`u32`) into `T`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tiktoken_rs::cl100k_base;
+    ///
+    /// let bpe = cl100k_base().unwrap();
+    /// let tokens: Vec<u64> = bpe.encode_with_special_tokens_as("hello <|endoftext|>");
+    /// ```
+    pub fn encode_with_special_tokens_as<T: FromRank>(&self, text: &str) -> Vec<T> {
+        self.encode_with_special_tokens(text)
+            .into_iter()
+            .map(T::from_rank)
+            .collect()
+    }
+
+    /// Like [`encode`](CoreBPE::encode), but converts each token from
+    /// [`Rank`] (`u32`) into `T`.
+    pub fn encode_as<T: FromRank>(
+        &self,
+        text: &str,
+        allowed_special: &HashSet<&str>,
+    ) -> (Vec<T>, usize) {
+        let (tokens, last_piece_token_len) = self.encode(text, allowed_special);
+        (
+            tokens.into_iter().map(T::from_rank).collect(),
+            last_piece_token_len,
+        )
     }
 
     // ====================
