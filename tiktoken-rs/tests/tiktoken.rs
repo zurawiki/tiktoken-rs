@@ -2,7 +2,7 @@ use rustc_hash::FxHashMap as HashMap;
 
 use tiktoken_rs::{
     byte_pair_split, cl100k_base, o200k_base, o200k_harmony, p50k_base, p50k_base_singleton,
-    r50k_base, CoreBPE, Rank,
+    p50k_edit, r50k_base, CoreBPE, Rank,
 };
 
 #[test]
@@ -154,6 +154,85 @@ fn test_decode_bytes_non_utf8() {
     // decode_bytes should succeed and return the raw bytes
     let bytes = bpe.decode_bytes(&[49426]).unwrap();
     assert!(!bytes.is_empty());
+}
+
+/// Ported from upstream tiktoken test_simple_repeated
+#[test]
+fn test_simple_repeated() {
+    let bpe = r50k_base().unwrap();
+    test_decode(&bpe, "0", vec![15]);
+    test_decode(&bpe, "00", vec![405]);
+    test_decode(&bpe, "000", vec![830]);
+    test_decode(&bpe, "0000", vec![2388]);
+    test_decode(&bpe, "00000", vec![20483]);
+    test_decode(&bpe, "000000", vec![10535]);
+    test_decode(&bpe, "0000000", vec![24598]);
+    test_decode(&bpe, "00000000", vec![8269]);
+    test_decode(&bpe, "000000000", vec![10535, 830]);
+    test_decode(&bpe, "0000000000", vec![8269, 405]);
+    test_decode(&bpe, "00000000000", vec![8269, 830]);
+    test_decode(&bpe, "000000000000", vec![8269, 2388]);
+    test_decode(&bpe, "0000000000000", vec![8269, 20483]);
+    test_decode(&bpe, "00000000000000", vec![8269, 10535]);
+    test_decode(&bpe, "000000000000000", vec![8269, 24598]);
+    test_decode(&bpe, "0000000000000000", vec![25645]);
+    test_decode(&bpe, "00000000000000000", vec![8269, 10535, 830]);
+}
+
+/// Ported from upstream tiktoken test_simple_regex
+#[test]
+fn test_simple_regex() {
+    let bpe = cl100k_base().unwrap();
+    test_decode(&bpe, "rer", vec![38149]);
+    test_decode(&bpe, "'rer", vec![2351, 81]);
+    test_decode(&bpe, "today\n ", vec![31213, 198, 220]);
+    test_decode(&bpe, "today\n \n", vec![31213, 27907]);
+    test_decode(&bpe, "today\n  \n", vec![31213, 14211]);
+}
+
+/// Ported from upstream tiktoken test_encode_empty
+#[test]
+fn test_encode_empty() {
+    let bpe = r50k_base().unwrap();
+    assert_eq!(bpe.encode_with_special_tokens(""), vec![] as Vec<Rank>);
+}
+
+/// Ported from upstream tiktoken test_catastrophically_repetitive.
+/// Validates that possessive quantifiers prevent catastrophic backtracking.
+#[test]
+fn test_catastrophically_repetitive() {
+    let encoders: Vec<(&str, CoreBPE)> = vec![
+        ("r50k", r50k_base().unwrap()),
+        ("p50k", p50k_base().unwrap()),
+        ("p50k_edit", p50k_edit().unwrap()),
+        ("cl100k", cl100k_base().unwrap()),
+        ("o200k", o200k_base().unwrap()),
+        ("o200k_harmony", o200k_harmony().unwrap()),
+    ];
+    for (name, bpe) in &encoders {
+        for c in ["^", "0", "a", "'s", " ", "\n"] {
+            let big_value: String = c.repeat(10_000);
+            let tokens = bpe.encode_with_special_tokens(&big_value);
+            let decoded = bpe.decode(&tokens).unwrap();
+            assert_eq!(decoded, big_value, "roundtrip failed for {name} with {c:?}");
+
+            let big_value = format!(" {big_value}");
+            let tokens = bpe.encode_with_special_tokens(&big_value);
+            let decoded = bpe.decode(&tokens).unwrap();
+            assert_eq!(
+                decoded, big_value,
+                "roundtrip failed for {name} with ' ' + {c:?}"
+            );
+
+            let big_value = format!("{big_value}\n");
+            let tokens = bpe.encode_with_special_tokens(&big_value);
+            let decoded = bpe.decode(&tokens).unwrap();
+            assert_eq!(
+                decoded, big_value,
+                "roundtrip failed for {name} with {c:?} + newline"
+            );
+        }
+    }
 }
 
 #[test]

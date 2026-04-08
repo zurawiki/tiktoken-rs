@@ -433,7 +433,7 @@ impl CoreBPE {
         if unstable_bytes.len() > 1 {
             let last_decoded = bstr::decode_last_utf8(unstable_bytes.as_slice());
             if unstable_bytes.len() - last_decoded.1 > 0
-                && last_decoded.0.map_or(false, |c| c.is_whitespace())
+                && last_decoded.0.is_some_and(|c| c.is_whitespace())
             {
                 let mut reencoded = byte_pair_encode(
                     &unstable_bytes[..unstable_bytes.len() - last_decoded.1],
