@@ -28,9 +28,10 @@ macro_rules! starts_with_any {
 /// assert_eq!(context_size, 32768);
 /// ```
 ///
-/// # Panics
+/// # Note
 ///
-/// This function does not panic. It returns a default value of 4096 if the model is not recognized.
+/// Returns a default of 4096 for unrecognized models. Use [`crate::tokenizer::get_tokenizer`]
+/// to check if a model is recognized before relying on this value.
 pub fn get_context_size(model: &str) -> usize {
     if let Some(rest) = model.strip_prefix("ft:") {
         let base = rest.split(':').next().unwrap_or(rest);
