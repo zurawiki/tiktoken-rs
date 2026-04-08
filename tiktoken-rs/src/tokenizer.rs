@@ -36,8 +36,9 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("o3-", Tokenizer::O200kBase),
     ("o4-", Tokenizer::O200kBase),
     // chat
-    ("gpt-5.4-", Tokenizer::O200kBase),
+    ("gpt-5.", Tokenizer::O200kBase), // e.g., gpt-5.4-mini, gpt-5.3-codex, gpt-5.2-pro
     ("gpt-5-", Tokenizer::O200kBase),
+    ("codex-", Tokenizer::O200kBase), // e.g., codex-mini-latest
     ("gpt-4.5-", Tokenizer::O200kBase),
     ("gpt-4.1-", Tokenizer::O200kBase),
     ("chatgpt-4o-", Tokenizer::O200kBase),
@@ -57,6 +58,7 @@ const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("o4", Tokenizer::O200kBase),
     // chat
     ("gpt-5.4", Tokenizer::O200kBase),
+    ("gpt-5.2", Tokenizer::O200kBase),
     ("gpt-5", Tokenizer::O200kBase),
     ("gpt-5-mini", Tokenizer::O200kBase),
     ("gpt-5-nano", Tokenizer::O200kBase),
@@ -176,6 +178,19 @@ mod tests {
         assert_eq!(get_tokenizer("gpt-5.4"), Some(Tokenizer::O200kBase));
         assert_eq!(get_tokenizer("gpt-5.4-mini"), Some(Tokenizer::O200kBase));
         assert_eq!(get_tokenizer("gpt-5.4-pro"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("gpt-5.2"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("gpt-5.2-pro"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("gpt-5.2-codex"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("gpt-5.3-codex"), Some(Tokenizer::O200kBase));
+        assert_eq!(
+            get_tokenizer("gpt-5.3-codex-spark"),
+            Some(Tokenizer::O200kBase)
+        );
+        assert_eq!(get_tokenizer("gpt-5-codex"), Some(Tokenizer::O200kBase));
+        assert_eq!(
+            get_tokenizer("codex-mini-latest"),
+            Some(Tokenizer::O200kBase)
+        );
         // GPT-4 series
         assert_eq!(get_tokenizer("gpt-4o"), Some(Tokenizer::O200kBase));
         assert_eq!(
