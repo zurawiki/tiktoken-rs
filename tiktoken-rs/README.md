@@ -10,9 +10,11 @@
 
 Rust library for tokenizing text with OpenAI models using tiktoken.
 
-This library provides a set of ready-made tokenizer libraries for working with GPT, tiktoken and related OpenAI models. Use cases covers tokenizing and counting tokens in text inputs.
+This library provides a set of ready-made tokenizer libraries for working with GPT, tiktoken and related OpenAI models. Use cases cover tokenizing and counting tokens in text inputs.
 
-This library is built on top of the `tiktoken` library and includes some additional features and enhancements for ease of use with rust code.
+This library is built on top of the `tiktoken` library and includes some additional features and enhancements for ease of use with Rust code.
+
+Supports all current OpenAI models including GPT-5, GPT-4.1, GPT-4o, o1, o3, o4-mini, and gpt-oss models.
 
 # Examples
 
@@ -40,6 +42,18 @@ let tokens = bpe.encode_with_special_tokens(
 println!("Token count: {}", tokens.len());
 ```
 
+For repeated calls, use the singleton to avoid re-initializing the tokenizer:
+
+```rust
+use tiktoken_rs::o200k_base_singleton;
+
+let bpe = o200k_base_singleton();
+let tokens = bpe.encode_with_special_tokens(
+  "This is a sentence   with spaces"
+);
+println!("Token count: {}", tokens.len());
+```
+
 ## Counting max_tokens parameter for a chat completion request
 
 ```rust
@@ -49,20 +63,17 @@ let messages = vec![
     ChatCompletionRequestMessage {
         content: Some("You are a helpful assistant that only speaks French.".to_string()),
         role: "system".to_string(),
-        name: None,
-        function_call: None,
+        ..Default::default()
     },
     ChatCompletionRequestMessage {
         content: Some("Hello, how are you?".to_string()),
         role: "user".to_string(),
-        name: None,
-        function_call: None,
+        ..Default::default()
     },
     ChatCompletionRequestMessage {
         content: Some("Parlez-vous francais?".to_string()),
         role: "system".to_string(),
-        name: None,
-        function_call: None,
+        ..Default::default()
     },
 ];
 let max_tokens = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
@@ -75,27 +86,25 @@ Need to enable the `async-openai` feature in your `Cargo.toml` file.
 
 ```rust
 use tiktoken_rs::async_openai::get_chat_completion_max_tokens;
-use async_openai::types::{ChatCompletionRequestMessage, Role};
+use async_openai::types::chat::{
+    ChatCompletionRequestMessage, ChatCompletionRequestSystemMessage,
+    ChatCompletionRequestSystemMessageContent, ChatCompletionRequestUserMessage,
+    ChatCompletionRequestUserMessageContent,
+};
 
 let messages = vec![
-    ChatCompletionRequestMessage {
-        content: Some("You are a helpful assistant that only speaks French.".to_string()),
-        role: Role::System,
+    ChatCompletionRequestMessage::System(ChatCompletionRequestSystemMessage {
+        content: ChatCompletionRequestSystemMessageContent::Text(
+            "You are a helpful assistant that only speaks French.".to_string(),
+        ),
         name: None,
-        function_call: None,
-    },
-    ChatCompletionRequestMessage {
-        content: Some("Hello, how are you?".to_string()),
-        role: Role::User,
+    }),
+    ChatCompletionRequestMessage::User(ChatCompletionRequestUserMessage {
+        content: ChatCompletionRequestUserMessageContent::Text(
+            "Hello, how are you?".to_string(),
+        ),
         name: None,
-        function_call: None,
-    },
-    ChatCompletionRequestMessage {
-        content: Some("Parlez-vous francais?".to_string()),
-        role: Role::System,
-        name: None,
-        function_call: None,
-    },
+    }),
 ];
 let max_tokens = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
 println!("max_tokens: {}", max_tokens);
@@ -105,12 +114,24 @@ println!("max_tokens: {}", max_tokens);
 
 | Encoding name           | OpenAI models                                                             |
 | ----------------------- | ------------------------------------------------------------------------- |
-| `o200k_harmony`         | gpt-oss models, `gpt-oss-20b`, `gpt-oss-120b`                             |
-| `o200k_base`            | GPT-5, GPT-4.1, GPT-4o, o4, o3, and o1 models                             |
-| `cl100k_base`           | ChatGPT models, `text-embedding-ada-002`                                  |
+| `o200k_harmony`         | `gpt-oss-20b`, `gpt-oss-120b`                                            |
+| `o200k_base`            | `gpt-5`, `gpt-4.1`, `gpt-4.5-*`, `gpt-4o`, `o4-mini`, `o3`, `o1`, `chatgpt-4o-latest` |
+| `cl100k_base`           | `gpt-4`, `gpt-3.5-turbo`, `text-embedding-ada-002`, `text-embedding-3-*` |
 | `p50k_base`             | Code models, `text-davinci-002`, `text-davinci-003`                       |
-| `p50k_edit`             | Use for edit models like `text-davinci-edit-001`, `code-davinci-edit-001` |
+| `p50k_edit`             | Edit models like `text-davinci-edit-001`, `code-davinci-edit-001`         |
 | `r50k_base` (or `gpt2`) | GPT-3 models like `davinci`                                               |
+
+### Context sizes
+
+| Model           | Context window |
+| --------------- | -------------- |
+| `gpt-5`         | 400,000        |
+| `gpt-4.1`       | 1,047,576      |
+| `o1`, `o3`, `o4-mini` | 200,000  |
+| `gpt-4o`        | 128,000        |
+| `gpt-oss`       | 131,072        |
+| `gpt-4`         | 8,192          |
+| `gpt-3.5-turbo` | 16,385         |
 
 See the [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/tiktoken-rs/examples) in the repo for use cases. For more context on the different tokenizers, see the [OpenAI Cookbook](https://github.com/openai/openai-cookbook/blob/66b988407d8d13cad5060a881dc8c892141f2d5c/examples/How_to_count_tokens_with_tiktoken.ipynb)
 

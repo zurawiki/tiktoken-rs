@@ -19,15 +19,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let messages = vec![
         ChatCompletionRequestMessage {
             role: "system".to_string(),
-            name: None,
             content: Some(content),
-            function_call: None,
+            ..Default::default()
         },
         ChatCompletionRequestMessage {
             role: "user".to_string(),
-            name: None,
             content: Some("We don't have time to boil the ocean.".to_string()),
-            function_call: None,
+            ..Default::default()
         },
     ];
     let num_tokens = num_tokens_from_messages("gpt-4-turbo", &messages).unwrap();
