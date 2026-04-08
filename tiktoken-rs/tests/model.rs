@@ -59,6 +59,13 @@ fn test_gpt4_context_size() {
 }
 
 #[test]
+fn test_gpt35_aliases() {
+    // Common shorthand and Azure deployment name should resolve like gpt-3.5-turbo
+    assert_eq!(get_context_size("gpt-3.5"), Some(16_385));
+    assert_eq!(get_context_size("gpt-35-turbo"), Some(16_385));
+}
+
+#[test]
 fn test_unknown_model_returns_none() {
     assert_eq!(get_context_size("foo"), None);
     assert_eq!(get_context_size("not-a-model"), None);
