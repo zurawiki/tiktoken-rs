@@ -126,7 +126,10 @@ impl CoreBPE {
     /// let tokens: Vec<usize> = bpe.encode_ordinary_as("hello world");
     /// ```
     pub fn encode_ordinary_as<T: FromRank>(&self, text: &str) -> Vec<T> {
-        self.encode_ordinary(text).into_iter().map(T::from_rank).collect()
+        self.encode_ordinary(text)
+            .into_iter()
+            .map(T::from_rank)
+            .collect()
     }
 
     /// Like [`encode_with_special_tokens`](CoreBPE::encode_with_special_tokens),

@@ -270,21 +270,36 @@ fn test_encode_as_generic() {
     let as_u64: Vec<u64> = bpe.encode_ordinary_as(text);
     let as_i64: Vec<i64> = bpe.encode_ordinary_as(text);
     assert_eq!(ordinary, as_rank);
-    assert_eq!(ordinary.iter().map(|&t| t as usize).collect::<Vec<_>>(), as_usize);
-    assert_eq!(ordinary.iter().map(|&t| t as u64).collect::<Vec<_>>(), as_u64);
-    assert_eq!(ordinary.iter().map(|&t| t as i64).collect::<Vec<_>>(), as_i64);
+    assert_eq!(
+        ordinary.iter().map(|&t| t as usize).collect::<Vec<_>>(),
+        as_usize
+    );
+    assert_eq!(
+        ordinary.iter().map(|&t| t as u64).collect::<Vec<_>>(),
+        as_u64
+    );
+    assert_eq!(
+        ordinary.iter().map(|&t| t as i64).collect::<Vec<_>>(),
+        as_i64
+    );
 
     // encode_with_special_tokens_as: uses special tokens, so output differs from ordinary
     let special = bpe.encode_with_special_tokens(text);
     let special_usize: Vec<usize> = bpe.encode_with_special_tokens_as(text);
     assert_ne!(ordinary.len(), special.len()); // special token is one token, not split
-    assert_eq!(special.iter().map(|&t| t as usize).collect::<Vec<_>>(), special_usize);
+    assert_eq!(
+        special.iter().map(|&t| t as usize).collect::<Vec<_>>(),
+        special_usize
+    );
 
     // encode_as: test tuple return
     let allowed = bpe.special_tokens();
     let (enc, last_len) = bpe.encode(text, &allowed);
     let (enc_usize, last_len_as): (Vec<usize>, usize) = bpe.encode_as(text, &allowed);
-    assert_eq!(enc.iter().map(|&t| t as usize).collect::<Vec<_>>(), enc_usize);
+    assert_eq!(
+        enc.iter().map(|&t| t as usize).collect::<Vec<_>>(),
+        enc_usize
+    );
     assert_eq!(last_len, last_len_as);
 }
 
