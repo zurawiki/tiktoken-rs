@@ -600,9 +600,12 @@ pub mod async_openai {
             .map(|calls| {
                 calls
                     .iter()
-                    .filter_map(|tc| match tc {
-                        ChatCompletionMessageToolCalls::Function(f) => Some((&f.function).into()),
-                        ChatCompletionMessageToolCalls::Custom(_) => None,
+                    .map(|tc| match tc {
+                        ChatCompletionMessageToolCalls::Function(f) => (&f.function).into(),
+                        ChatCompletionMessageToolCalls::Custom(c) => super::FunctionCall {
+                            name: c.custom_tool.name.clone(),
+                            arguments: c.custom_tool.input.clone(),
+                        },
                     })
                     .collect()
             })
@@ -649,7 +652,7 @@ pub mod async_openai {
                 }
                 ChatCompletionRequestMessage::Tool(msg) => Self {
                     role: "tool".to_string(),
-                    name: None,
+                    name: Some(msg.tool_call_id.clone()),
                     content: Some(tool_content_text(&msg.content).unwrap_or_default()),
                     ..Default::default()
                 },
