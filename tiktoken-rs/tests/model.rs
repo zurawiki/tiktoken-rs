@@ -10,11 +10,40 @@ fn test_finetuned_context_size() {
         get_context_size("ft:gpt-4o:custom"),
         get_context_size("gpt-4o")
     );
+    assert_eq!(get_context_size("ft:gpt-5.4:org:name:id"), 1_050_000);
+    assert_eq!(get_context_size("ft:gpt-5.4-mini:org"), 400_000);
 }
 
 #[test]
 fn test_o_series_context_size() {
-    assert_eq!(get_context_size("o3-small"), 200_000);
-    assert_eq!(get_context_size("o4"), 200_000);
+    assert_eq!(get_context_size("o1"), 200_000);
+    assert_eq!(get_context_size("o1-pro"), 200_000);
+    assert_eq!(get_context_size("o1-mini"), 128_000);
+    assert_eq!(get_context_size("o1-preview"), 128_000);
+    assert_eq!(get_context_size("o3"), 200_000);
+    assert_eq!(get_context_size("o3-mini"), 200_000);
+    assert_eq!(get_context_size("o3-pro"), 200_000);
+    assert_eq!(get_context_size("o4-mini"), 200_000);
+}
+
+#[test]
+fn test_gpt5_context_size() {
     assert_eq!(get_context_size("gpt-5"), 400_000);
+    assert_eq!(get_context_size("gpt-5-mini"), 400_000);
+    assert_eq!(get_context_size("gpt-5-nano"), 400_000);
+    assert_eq!(get_context_size("gpt-5.4"), 1_050_000);
+    assert_eq!(get_context_size("gpt-5.4-pro"), 1_050_000);
+    assert_eq!(get_context_size("gpt-5.4-mini"), 400_000);
+    assert_eq!(get_context_size("gpt-5.4-nano"), 400_000);
+}
+
+#[test]
+fn test_gpt4_context_size() {
+    assert_eq!(get_context_size("gpt-4.5-preview"), 128_000);
+    assert_eq!(get_context_size("gpt-4.1"), 1_047_576);
+    assert_eq!(get_context_size("gpt-4.1-mini"), 1_047_576);
+    assert_eq!(get_context_size("gpt-4.1-nano"), 1_047_576);
+    assert_eq!(get_context_size("chatgpt-4o-latest"), 128_000);
+    assert_eq!(get_context_size("gpt-4o"), 128_000);
+    assert_eq!(get_context_size("gpt-4o-mini"), 128_000);
 }
