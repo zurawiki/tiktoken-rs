@@ -33,7 +33,8 @@ use crate::{
 /// let max_tokens = get_text_completion_max_tokens("gpt-4o", "Translate to French: '").unwrap();
 /// ```
 pub fn get_text_completion_max_tokens(model: &str, prompt: &str) -> Result<usize> {
-    let context_size = get_context_size(model);
+    let context_size = get_context_size(model)
+        .ok_or_else(|| anyhow!("Unknown context size for model {}", model))?;
     let tokenizer =
         get_tokenizer(model).ok_or_else(|| anyhow!("No tokenizer found for model {}", model))?;
     let bpe = bpe_singleton(tokenizer);
@@ -109,7 +110,12 @@ pub fn num_tokens_from_messages(
         && tokenizer != Tokenizer::O200kBase
         && tokenizer != Tokenizer::O200kHarmony
     {
-        anyhow::bail!("Chat completion is only supported chat models")
+        anyhow::bail!(
+            "Chat token counting is not supported for model {:?} (tokenizer {:?}). \
+             Supported tokenizers: Cl100kBase, O200kBase, O200kHarmony.",
+            model,
+            tokenizer
+        )
     }
     let bpe = bpe_singleton(tokenizer);
 
@@ -215,7 +221,8 @@ pub fn get_chat_completion_max_tokens(
     model: &str,
     messages: &[ChatCompletionRequestMessage],
 ) -> Result<usize> {
-    let context_size = get_context_size(model);
+    let context_size = get_context_size(model)
+        .ok_or_else(|| anyhow!("Unknown context size for model {}", model))?;
     let prompt_tokens = num_tokens_from_messages(model, messages)?;
     Ok(context_size.saturating_sub(prompt_tokens))
 }
@@ -731,6 +738,11 @@ pub mod async_openai {
     }
 
     /// Calculates the total number of tokens for the given list of messages.
+    ///
+    /// **Note:** Only text content is counted. Non-text parts (images, audio, files) are
+    /// silently skipped because they use a separate token formula based on resolution/duration,
+    /// not BPE encoding. If your messages contain non-text content, the returned count will
+    /// be lower than the actual API token usage.
     ///
     /// # Arguments
     ///
