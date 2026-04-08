@@ -3,5 +3,6 @@
   "extends": [
     "config:best-practices",
     "schedule:quarterly"
-  ]
+  ],
+  "labels": ["dependencies"]
 }
