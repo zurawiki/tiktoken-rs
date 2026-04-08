@@ -132,9 +132,10 @@ println!("max_tokens: {}", max_tokens);
 | `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`                           | 1,047,576      |
 | `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano` | 400,000        |
 | `o1`, `o3`, `o3-mini`, `o3-pro`, `o4-mini`                          | 200,000        |
+| `codex-mini`                                                        | 200,000        |
 | `gpt-oss`                                                           | 131,072        |
 | `gpt-4o`, `gpt-4o-mini`                                             | 128,000        |
-| `o1-mini`                                                           | 128,000        |
+| `o1-mini`, `gpt-5.3-codex-spark`                                    | 128,000        |
 | `gpt-3.5-turbo`                                                     | 16,385         |
 | `gpt-4`                                                             | 8,192          |
 

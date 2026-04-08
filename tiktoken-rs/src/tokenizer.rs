@@ -188,10 +188,13 @@ mod tests {
             Some(Tokenizer::O200kBase)
         );
         assert_eq!(get_tokenizer("gpt-5-codex"), Some(Tokenizer::O200kBase));
+        assert_eq!(get_tokenizer("codex-mini"), Some(Tokenizer::O200kBase));
         assert_eq!(
             get_tokenizer("codex-mini-latest"),
             Some(Tokenizer::O200kBase)
         );
+        // Edge case: gpt-5.0 matches the gpt-5. prefix
+        assert_eq!(get_tokenizer("gpt-5.0"), Some(Tokenizer::O200kBase));
         // GPT-4 series
         assert_eq!(get_tokenizer("gpt-4o"), Some(Tokenizer::O200kBase));
         assert_eq!(
