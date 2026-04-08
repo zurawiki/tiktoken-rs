@@ -38,7 +38,7 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // chat
     ("gpt-5.", Tokenizer::O200kBase), // e.g., gpt-5.4-mini, gpt-5.3-codex, gpt-5.2-pro
     ("gpt-5-", Tokenizer::O200kBase),
-    ("codex-", Tokenizer::O200kBase), // e.g., codex-mini-latest
+    ("codex-mini", Tokenizer::O200kBase), // codex-mini-latest
     ("gpt-4.5-", Tokenizer::O200kBase),
     ("gpt-4.1-", Tokenizer::O200kBase),
     ("chatgpt-4o-", Tokenizer::O200kBase),
