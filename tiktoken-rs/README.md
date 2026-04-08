@@ -115,28 +115,28 @@ println!("max_tokens: {}", max_tokens);
 
 `tiktoken` supports these encodings used by OpenAI models:
 
-| Encoding name           | OpenAI models                                                             |
-| ----------------------- | ------------------------------------------------------------------------- |
-| `o200k_harmony`         | `gpt-oss-20b`, `gpt-oss-120b`                                            |
+| Encoding name           | OpenAI models                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `o200k_harmony`         | `gpt-oss-20b`, `gpt-oss-120b`                                                                    |
 | `o200k_base`            | `gpt-5.4`, `gpt-5`, `gpt-4.1`, `gpt-4.5-*`, `gpt-4o`, `o4-mini`, `o3`, `o1`, `chatgpt-4o-latest` |
-| `cl100k_base`           | `gpt-4`, `gpt-3.5-turbo`, `text-embedding-ada-002`, `text-embedding-3-*` |
-| `p50k_base`             | Code models, `text-davinci-002`, `text-davinci-003`                       |
-| `p50k_edit`             | Edit models like `text-davinci-edit-001`, `code-davinci-edit-001`         |
-| `r50k_base` (or `gpt2`) | GPT-3 models like `davinci`                                               |
+| `cl100k_base`           | `gpt-4`, `gpt-3.5-turbo`, `text-embedding-ada-002`, `text-embedding-3-*`                         |
+| `p50k_base`             | Code models, `text-davinci-002`, `text-davinci-003`                                              |
+| `p50k_edit`             | Edit models like `text-davinci-edit-001`, `code-davinci-edit-001`                                |
+| `r50k_base` (or `gpt2`) | GPT-3 models like `davinci`                                                                      |
 
 ### Context sizes
 
-| Model | Context window |
-| ----- | -------------- |
-| `gpt-5.4`, `gpt-5.4-pro` | 1,050,000 |
-| `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano` | 1,047,576 |
-| `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano` | 400,000 |
-| `o1`, `o3`, `o3-mini`, `o3-pro`, `o4-mini` | 200,000 |
-| `gpt-oss` | 131,072 |
-| `gpt-4o`, `gpt-4o-mini` | 128,000 |
-| `o1-mini` | 128,000 |
-| `gpt-3.5-turbo` | 16,385 |
-| `gpt-4` | 8,192 |
+| Model                                                               | Context window |
+| ------------------------------------------------------------------- | -------------- |
+| `gpt-5.4`, `gpt-5.4-pro`                                            | 1,050,000      |
+| `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`                           | 1,047,576      |
+| `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano` | 400,000        |
+| `o1`, `o3`, `o3-mini`, `o3-pro`, `o4-mini`                          | 200,000        |
+| `gpt-oss`                                                           | 131,072        |
+| `gpt-4o`, `gpt-4o-mini`                                             | 128,000        |
+| `o1-mini`                                                           | 128,000        |
+| `gpt-3.5-turbo`                                                     | 16,385         |
+| `gpt-4`                                                             | 8,192          |
 
 See the [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/tiktoken-rs/examples) in the repo for use cases. For more context on the different tokenizers, see the [OpenAI Cookbook](https://github.com/openai/openai-cookbook/blob/66b988407d8d13cad5060a881dc8c892141f2d5c/examples/How_to_count_tokens_with_tiktoken.ipynb)
 
