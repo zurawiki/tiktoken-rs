@@ -462,9 +462,19 @@ mod tests {
 #[cfg(feature = "async-openai")]
 pub mod async_openai {
     use anyhow::Result;
+    use async_openai::types::chat::{
+        ChatCompletionRequestAssistantMessageContent,
+        ChatCompletionRequestAssistantMessageContentPart,
+        ChatCompletionRequestDeveloperMessageContent,
+        ChatCompletionRequestDeveloperMessageContentPart, ChatCompletionRequestMessage,
+        ChatCompletionRequestSystemMessageContent, ChatCompletionRequestSystemMessageContentPart,
+        ChatCompletionRequestToolMessageContent, ChatCompletionRequestToolMessageContentPart,
+        ChatCompletionRequestUserMessageContent, ChatCompletionRequestUserMessageContentPart,
+        FunctionCall,
+    };
 
-    impl From<&async_openai::types::FunctionCall> for super::FunctionCall {
-        fn from(f: &async_openai::types::FunctionCall) -> Self {
+    impl From<&FunctionCall> for super::FunctionCall {
+        fn from(f: &FunctionCall) -> Self {
             Self {
                 name: f.name.clone(),
                 arguments: f.arguments.clone(),
@@ -472,15 +482,137 @@ pub mod async_openai {
         }
     }
 
-    impl From<&async_openai::types::ChatCompletionRequestMessage>
-        for super::ChatCompletionRequestMessage
-    {
-        fn from(m: &async_openai::types::ChatCompletionRequestMessage) -> Self {
-            Self {
-                role: m.role.to_string(),
-                name: m.name.clone(),
-                content: m.content.clone(),
-                function_call: m.function_call.as_ref().map(|f| f.into()),
+    fn content_text(content: &ChatCompletionRequestSystemMessageContent) -> Option<String> {
+        match content {
+            ChatCompletionRequestSystemMessageContent::Text(s) => Some(s.clone()),
+            ChatCompletionRequestSystemMessageContent::Array(parts) => {
+                let texts: Vec<_> = parts
+                    .iter()
+                    .map(|ChatCompletionRequestSystemMessageContentPart::Text(t)| t.text.clone())
+                    .collect();
+                if texts.is_empty() {
+                    None
+                } else {
+                    Some(texts.join(""))
+                }
+            }
+        }
+    }
+
+    fn developer_content_text(
+        content: &ChatCompletionRequestDeveloperMessageContent,
+    ) -> Option<String> {
+        match content {
+            ChatCompletionRequestDeveloperMessageContent::Text(s) => Some(s.clone()),
+            ChatCompletionRequestDeveloperMessageContent::Array(parts) => {
+                let texts: Vec<_> = parts
+                    .iter()
+                    .map(|ChatCompletionRequestDeveloperMessageContentPart::Text(t)| t.text.clone())
+                    .collect();
+                if texts.is_empty() {
+                    None
+                } else {
+                    Some(texts.join(""))
+                }
+            }
+        }
+    }
+
+    fn user_content_text(content: &ChatCompletionRequestUserMessageContent) -> Option<String> {
+        match content {
+            ChatCompletionRequestUserMessageContent::Text(s) => Some(s.clone()),
+            ChatCompletionRequestUserMessageContent::Array(parts) => {
+                let texts: Vec<_> = parts
+                    .iter()
+                    .filter_map(|p| match p {
+                        ChatCompletionRequestUserMessageContentPart::Text(t) => {
+                            Some(t.text.clone())
+                        }
+                        _ => None,
+                    })
+                    .collect();
+                if texts.is_empty() {
+                    None
+                } else {
+                    Some(texts.join(""))
+                }
+            }
+        }
+    }
+
+    fn assistant_content_text(
+        content: &ChatCompletionRequestAssistantMessageContent,
+    ) -> Option<String> {
+        match content {
+            ChatCompletionRequestAssistantMessageContent::Text(s) => Some(s.clone()),
+            ChatCompletionRequestAssistantMessageContent::Array(parts) => {
+                let texts: Vec<_> = parts
+                    .iter()
+                    .filter_map(|p| match p {
+                        ChatCompletionRequestAssistantMessageContentPart::Text(t) => {
+                            Some(t.text.clone())
+                        }
+                        _ => None,
+                    })
+                    .collect();
+                if texts.is_empty() {
+                    None
+                } else {
+                    Some(texts.join(""))
+                }
+            }
+        }
+    }
+
+    #[allow(deprecated)]
+    impl From<&ChatCompletionRequestMessage> for super::ChatCompletionRequestMessage {
+        fn from(m: &ChatCompletionRequestMessage) -> Self {
+            match m {
+                ChatCompletionRequestMessage::System(msg) => Self {
+                    role: "system".to_string(),
+                    name: msg.name.clone(),
+                    content: Some(content_text(&msg.content).unwrap_or_default()),
+                    function_call: None,
+                },
+                ChatCompletionRequestMessage::Developer(msg) => Self {
+                    role: "developer".to_string(),
+                    name: msg.name.clone(),
+                    content: Some(developer_content_text(&msg.content).unwrap_or_default()),
+                    function_call: None,
+                },
+                ChatCompletionRequestMessage::User(msg) => Self {
+                    role: "user".to_string(),
+                    name: msg.name.clone(),
+                    content: Some(user_content_text(&msg.content).unwrap_or_default()),
+                    function_call: None,
+                },
+                ChatCompletionRequestMessage::Assistant(msg) => Self {
+                    role: "assistant".to_string(),
+                    name: msg.name.clone(),
+                    content: msg.content.as_ref().and_then(assistant_content_text),
+                    function_call: msg.function_call.as_ref().map(|f| f.into()),
+                },
+                ChatCompletionRequestMessage::Tool(msg) => Self {
+                    role: "tool".to_string(),
+                    name: None,
+                    content: Some(match &msg.content {
+                        ChatCompletionRequestToolMessageContent::Text(s) => s.clone(),
+                        ChatCompletionRequestToolMessageContent::Array(parts) => parts
+                            .iter()
+                            .map(|ChatCompletionRequestToolMessageContentPart::Text(t)| {
+                                t.text.clone()
+                            })
+                            .collect::<Vec<_>>()
+                            .join(""),
+                    }),
+                    function_call: None,
+                },
+                ChatCompletionRequestMessage::Function(msg) => Self {
+                    role: "function".to_string(),
+                    name: Some(msg.name.clone()),
+                    content: msg.content.clone(),
+                    function_call: None,
+                },
             }
         }
     }
@@ -497,9 +629,10 @@ pub mod async_openai {
     /// * A `Result` containing the total number of tokens (`usize`) or an error if the calculation fails.
     pub fn num_tokens_from_messages(
         model: &str,
-        messages: &[async_openai::types::ChatCompletionRequestMessage],
+        messages: &[ChatCompletionRequestMessage],
     ) -> Result<usize> {
-        let messages = messages.iter().map(|m| m.into()).collect::<Vec<_>>();
+        let messages: Vec<super::ChatCompletionRequestMessage> =
+            messages.iter().map(|m| m.into()).collect();
         super::num_tokens_from_messages(model, &messages)
     }
 
@@ -515,25 +648,29 @@ pub mod async_openai {
     /// * A `Result` containing the maximum number of tokens (`usize`) allowed for chat completions or an error if the retrieval fails.
     pub fn get_chat_completion_max_tokens(
         model: &str,
-        messages: &[async_openai::types::ChatCompletionRequestMessage],
+        messages: &[ChatCompletionRequestMessage],
     ) -> Result<usize> {
-        let messages = messages.iter().map(|m| m.into()).collect::<Vec<_>>();
+        let messages: Vec<super::ChatCompletionRequestMessage> =
+            messages.iter().map(|m| m.into()).collect();
         super::get_chat_completion_max_tokens(model, &messages)
     }
 
     #[cfg(test)]
     mod tests {
         use super::*;
+        use async_openai::types::chat::ChatCompletionRequestSystemMessage;
 
         #[test]
         fn test_num_tokens_from_messages() {
             let model = "gpt-3.5-turbo-0301";
-            let messages = &[async_openai::types::ChatCompletionRequestMessage {
-                role: async_openai::types::Role::System,
-                name: None,
-                content: Some("You are a helpful, pattern-following assistant that translates corporate jargon into plain English.".to_string()),
-                function_call: None,
-            }];
+            let messages = &[ChatCompletionRequestMessage::System(
+                ChatCompletionRequestSystemMessage {
+                    content: ChatCompletionRequestSystemMessageContent::Text(
+                        "You are a helpful, pattern-following assistant that translates corporate jargon into plain English.".to_string(),
+                    ),
+                    name: None,
+                },
+            )];
             let num_tokens = num_tokens_from_messages(model, messages).unwrap();
             assert!(num_tokens > 0);
         }
@@ -541,12 +678,14 @@ pub mod async_openai {
         #[test]
         fn test_get_chat_completion_max_tokens() {
             let model = "gpt-3.5-turbo";
-            let messages = &[async_openai::types::ChatCompletionRequestMessage {
-                content: Some("You are a helpful assistant that only speaks French.".to_string()),
-                role: async_openai::types::Role::System,
-                name: None,
-                function_call: None,
-            }];
+            let messages = &[ChatCompletionRequestMessage::System(
+                ChatCompletionRequestSystemMessage {
+                    content: ChatCompletionRequestSystemMessageContent::Text(
+                        "You are a helpful assistant that only speaks French.".to_string(),
+                    ),
+                    name: None,
+                },
+            )];
             let max_tokens = get_chat_completion_max_tokens(model, messages).unwrap();
             assert!(max_tokens > 0);
         }

@@ -89,27 +89,25 @@ Need to enable the `async-openai` feature in your `Cargo.toml` file.
 
 ```rust
 use tiktoken_rs::async_openai::get_chat_completion_max_tokens;
-use async_openai::types::{ChatCompletionRequestMessage, Role};
+use async_openai::types::chat::{
+    ChatCompletionRequestMessage, ChatCompletionRequestSystemMessage,
+    ChatCompletionRequestSystemMessageContent, ChatCompletionRequestUserMessage,
+    ChatCompletionRequestUserMessageContent,
+};
 
 let messages = vec![
-    ChatCompletionRequestMessage {
-        content: Some("You are a helpful assistant that only speaks French.".to_string()),
-        role: Role::System,
+    ChatCompletionRequestMessage::System(ChatCompletionRequestSystemMessage {
+        content: ChatCompletionRequestSystemMessageContent::Text(
+            "You are a helpful assistant that only speaks French.".to_string(),
+        ),
         name: None,
-        function_call: None,
-    },
-    ChatCompletionRequestMessage {
-        content: Some("Hello, how are you?".to_string()),
-        role: Role::User,
+    }),
+    ChatCompletionRequestMessage::User(ChatCompletionRequestUserMessage {
+        content: ChatCompletionRequestUserMessageContent::Text(
+            "Hello, how are you?".to_string(),
+        ),
         name: None,
-        function_call: None,
-    },
-    ChatCompletionRequestMessage {
-        content: Some("Parlez-vous francais?".to_string()),
-        role: Role::System,
-        name: None,
-        function_call: None,
-    },
+    }),
 ];
 let max_tokens = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
 println!("max_tokens: {}", max_tokens);
