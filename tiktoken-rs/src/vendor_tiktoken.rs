@@ -18,7 +18,14 @@ use rustc_hash::FxHashMap as HashMap;
 
 pub type Rank = u32;
 
-fn _byte_pair_merge(ranks: &HashMap<Vec<u8>, Rank>, piece: &[u8]) -> Vec<(usize, Rank)> {
+// Every distinct 2-byte sequence (256 byte values × 256). Indexed by (byte_a << 8) | byte_b.
+pub(crate) const PAIR_TABLE_SIZE: usize = 256 * 256;
+
+fn _byte_pair_merge(
+    ranks: &HashMap<Vec<u8>, Rank>,
+    piece: &[u8],
+    pair_table: Option<&[Rank; PAIR_TABLE_SIZE]>,
+) -> Vec<(usize, Rank)> {
     // This is a vector of (start, rank).
     // The rank is of the pair starting at position start.
     let mut parts = Vec::with_capacity(piece.len() + 1);
@@ -26,9 +33,16 @@ fn _byte_pair_merge(ranks: &HashMap<Vec<u8>, Rank>, piece: &[u8]) -> Vec<(usize,
     // Note that we hash bytes when indexing into `ranks`, not token pairs. As long as we train BPE
     // the way we currently do, this is equivalent. An easy way to break this would be to decouple
     // merge priority from token index or to prevent specific token merges.
+    //
+    // When `pair_table` is Some, the initial pair scan uses a flat `PAIR_TABLE_SIZE`-entry
+    // array indexed by the 2-byte pair instead of the hashmap. Subsequent merges (3+ byte
+    // sequences) always go through the hashmap, since 3+ byte keys don't fit in a u16.
     let mut min_rank: (Rank, usize) = (Rank::MAX, usize::MAX);
     for i in 0..piece.len() - 1 {
-        let rank = *ranks.get(&piece[i..i + 2]).unwrap_or(&Rank::MAX);
+        let rank = match pair_table {
+            Some(table) => table[((piece[i] as u16) << 8 | piece[i + 1] as u16) as usize],
+            None => *ranks.get(&piece[i..i + 2]).unwrap_or(&Rank::MAX),
+        };
         if rank < min_rank.0 {
             min_rank = (rank, i);
         }
@@ -76,11 +90,15 @@ fn _byte_pair_merge(ranks: &HashMap<Vec<u8>, Rank>, piece: &[u8]) -> Vec<(usize,
     parts
 }
 
-pub fn byte_pair_encode(piece: &[u8], ranks: &HashMap<Vec<u8>, Rank>) -> Vec<Rank> {
+pub fn byte_pair_encode(
+    piece: &[u8],
+    ranks: &HashMap<Vec<u8>, Rank>,
+    pair_table: Option<&[Rank; PAIR_TABLE_SIZE]>,
+) -> Vec<Rank> {
     if piece.len() == 1 {
         return vec![ranks[piece]];
     }
-    _byte_pair_merge(ranks, piece)
+    _byte_pair_merge(ranks, piece, pair_table)
         .windows(2)
         .map(|part| ranks[&piece[part[0].0..part[1].0]])
         .collect()
@@ -88,7 +106,7 @@ pub fn byte_pair_encode(piece: &[u8], ranks: &HashMap<Vec<u8>, Rank>) -> Vec<Ran
 
 pub fn byte_pair_split<'a>(piece: &'a [u8], ranks: &HashMap<Vec<u8>, Rank>) -> Vec<&'a [u8]> {
     assert!(piece.len() > 1);
-    _byte_pair_merge(ranks, piece)
+    _byte_pair_merge(ranks, piece, None)
         .windows(2)
         .map(|part| &piece[part[0].0..part[1].0])
         .collect()
@@ -190,6 +208,10 @@ pub struct CoreBPE {
     pub(crate) special_regex_tls: Vec<Regex>,
     #[allow(dead_code)]
     pub(crate) sorted_token_bytes: Vec<Vec<u8>>,
+    /// Precomputed 2-byte pair to rank lookup table (~256 KB, built once at
+    /// construction). Used by encoding methods to skip the hashmap lookup for
+    /// the hot initial adjacent-pair scan inside `_byte_pair_merge`.
+    pub(crate) pair_table: Box<[Rank; PAIR_TABLE_SIZE]>,
 }
 
 impl CoreBPE {
@@ -231,7 +253,11 @@ impl CoreBPE {
             let piece = mat.unwrap().as_str().as_bytes();
             match self.encoder.get(piece) {
                 Some(token) => ret.push(*token),
-                None => ret.extend(&byte_pair_encode(piece, &self.encoder)),
+                None => ret.extend(&byte_pair_encode(
+                    piece,
+                    &self.encoder,
+                    Some(&self.pair_table),
+                )),
             }
         }
         ret
@@ -270,7 +296,7 @@ impl CoreBPE {
                     ret.push(*token);
                     continue;
                 }
-                let tokens = byte_pair_encode(piece, &self.encoder);
+                let tokens = byte_pair_encode(piece, &self.encoder, Some(&self.pair_table));
                 last_piece_token_len = tokens.len();
                 ret.extend(&tokens);
             }
@@ -402,7 +428,7 @@ impl CoreBPE {
                     // would be a regex split before the UTF-8 truncation point.
                     // Probably niche enough that no one will ever notice (after all, people didn't
                     // notice all the big holes in the previous unstable token implementation)
-                    Err(_) => byte_pair_encode(&possibility, &self.encoder),
+                    Err(_) => byte_pair_encode(&possibility, &self.encoder, Some(&self.pair_table)),
                     // Something like the following is intriguing but incorrect:
                     // Err(e) => self.encode_ordinary(unsafe {
                     //     std::str::from_utf8_unchecked(&possibility[..e.valid_up_to()])
@@ -438,10 +464,12 @@ impl CoreBPE {
                 let mut reencoded = byte_pair_encode(
                     &unstable_bytes[..unstable_bytes.len() - last_decoded.1],
                     &self.encoder,
+                    Some(&self.pair_table),
                 );
                 reencoded.extend(byte_pair_encode(
                     &unstable_bytes[unstable_bytes.len() - last_decoded.1..],
                     &self.encoder,
+                    Some(&self.pair_table),
                 ));
                 completions.insert(reencoded);
             }
