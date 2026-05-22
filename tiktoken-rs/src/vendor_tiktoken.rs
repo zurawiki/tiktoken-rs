@@ -179,6 +179,17 @@ impl std::error::Error for DecodeError {}
 
 pub const MAX_NUM_THREADS: usize = 128;
 
+/// Selects which hand-coded lexer (if any) to use for pretokenization in
+/// place of `fancy_regex::find_iter`. Set at `CoreBPE::new` time by exact
+/// string match against the canonical OpenAI BPE pretokenization patterns.
+/// Unknown patterns leave this as `None` and fall back to the regex.
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum LexerKind {
+    O200kBase,
+    Cl100kBase,
+    Gpt2,
+}
+
 // #[cfg_attr(feature = "python", pyclass)]
 #[derive(Clone)]
 pub struct CoreBPE {
@@ -190,6 +201,10 @@ pub struct CoreBPE {
     pub(crate) special_regex_tls: Vec<Regex>,
     #[allow(dead_code)]
     pub(crate) sorted_token_bytes: Vec<Vec<u8>>,
+    /// `Some(_)` when the pattern passed to `CoreBPE::new` matched one of the
+    /// canonical OpenAI BPE pretokenization patterns. `None` for any other
+    /// pattern (uses `fancy_regex` unchanged).
+    pub(crate) lexer_kind: Option<LexerKind>,
 }
 
 impl CoreBPE {
@@ -202,6 +217,21 @@ impl CoreBPE {
 
     fn _get_tl_special_regex(&self) -> &Regex {
         &self.special_regex_tls[hash_current_thread() % MAX_NUM_THREADS]
+    }
+
+    /// Pretokenize `text` into (start, end) byte ranges. Dispatches to the
+    /// hand-coded lexer when a canonical pattern was detected at construction,
+    /// else uses the thread-local `fancy_regex::find_iter`.
+    fn pretok_splits<'a>(&'a self, text: &'a str) -> Box<dyn Iterator<Item = (usize, usize)> + 'a> {
+        match self.lexer_kind {
+            Some(LexerKind::O200kBase) => Box::new(crate::lexer::split(text)),
+            Some(LexerKind::Cl100kBase) => Box::new(crate::lexer::split_cl100k(text)),
+            Some(LexerKind::Gpt2) => Box::new(crate::lexer::split_gpt2(text)),
+            None => Box::new(self._get_tl_regex().find_iter(text).map(|m| {
+                let m = m.expect("regex match");
+                (m.start(), m.end())
+            })),
+        }
     }
 
     /// Decodes tokens into a list of bytes.
@@ -225,10 +255,10 @@ impl CoreBPE {
     pub fn encode_ordinary(&self, text: &str) -> Vec<Rank> {
         // This is the core of the encoding logic; the other functions in here
         // just make things complicated :-)
-        let regex = self._get_tl_regex();
+        let bytes = text.as_bytes();
         let mut ret = vec![];
-        for mat in regex.find_iter(text) {
-            let piece = mat.unwrap().as_str().as_bytes();
+        for (start, end) in self.pretok_splits(text) {
+            let piece = &bytes[start..end];
             match self.encoder.get(piece) {
                 Some(token) => ret.push(*token),
                 None => ret.extend(&byte_pair_encode(piece, &self.encoder)),
@@ -239,7 +269,6 @@ impl CoreBPE {
 
     pub fn encode(&self, text: &str, allowed_special: &HashSet<&str>) -> (Vec<Rank>, usize) {
         let special_regex = self._get_tl_special_regex();
-        let regex = self._get_tl_regex();
         let mut ret = vec![];
 
         let mut start = 0;
@@ -263,8 +292,10 @@ impl CoreBPE {
             let end = next_special.map_or(text.len(), |m| m.start());
 
             // Okay, here we go, compare this logic to encode_ordinary
-            for mat in regex.find_iter(&text[start..end]) {
-                let piece = mat.unwrap().as_str().as_bytes();
+            let segment = &text[start..end];
+            let bytes = segment.as_bytes();
+            for (p_start, p_end) in self.pretok_splits(segment) {
+                let piece = &bytes[p_start..p_end];
                 if let Some(token) = self.encoder.get(piece) {
                     last_piece_token_len = 1;
                     ret.push(*token);

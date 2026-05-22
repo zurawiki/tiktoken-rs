@@ -94,6 +94,19 @@ impl CoreBPE {
         let mut sorted_token_bytes: Vec<Vec<u8>> = encoder.keys().cloned().collect();
         sorted_token_bytes.sort();
 
+        // Detect canonical OpenAI pretokenization patterns. If `pattern` matches one of the
+        // known canonical strings, the corresponding hand-coded lexer is used instead of
+        // `fancy_regex::find_iter`. Any other pattern (including user-supplied custom regexes)
+        // leaves this as `None` and the existing `fancy_regex` code path is used unchanged.
+        let lexer_kind = match pattern {
+            crate::lexer::PAT_STR_O200K_BASE => Some(crate::vendor_tiktoken::LexerKind::O200kBase),
+            crate::lexer::PAT_STR_CL100K_BASE => {
+                Some(crate::vendor_tiktoken::LexerKind::Cl100kBase)
+            }
+            crate::lexer::PAT_STR_GPT2 => Some(crate::vendor_tiktoken::LexerKind::Gpt2),
+            _ => None,
+        };
+
         Ok(Self {
             encoder,
             special_tokens_encoder,
@@ -104,6 +117,7 @@ impl CoreBPE {
                 .map(|_| special_regex.clone())
                 .collect(),
             sorted_token_bytes,
+            lexer_kind,
         })
     }
 

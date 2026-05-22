@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 mod api;
+mod lexer;
 mod patched_tiktoken;
 mod singleton;
 mod tiktoken_ext;
