@@ -822,3 +822,103 @@ impl<'a> Iterator for SplitsGpt2<'a> {
         Some((start, end))
     }
 }
+
+#[cfg(test)]
+mod lexer_regex_equivalence {
+    //! Assert that each pattern's lexer produces the same `(start, end)` splits
+    //! as `fancy_regex::Regex::find_iter` on the corresponding pattern, across
+    //! curated fixtures that span the algorithmic corners of the patterns.
+    //!
+    //! Full-corpus byte equality (across 230 MiB of multilingual / code /
+    //! synthetic content) was run separately during development; these unit
+    //! tests are the guardrail against future regressions inside this crate.
+
+    use super::*;
+    use fancy_regex::Regex;
+
+    fn fixtures() -> &'static [&'static str] {
+        &[
+            // empty + whitespace edges
+            "",
+            " ",
+            "  ",
+            "\n",
+            "\n\n",
+            " \n ",
+            "trailing ",
+            // ASCII words + contractions
+            "hello world",
+            "don't",
+            "I'm",
+            "we've",
+            "they'll",
+            "she'd",
+            "it's",
+            "DON'T I'M", // case-insensitive contractions for o200k / cl100k
+            // numbers (o200k / cl100k cap at {1,3})
+            "1",
+            "12",
+            "123",
+            "1234",
+            "012345",
+            // greedy uppercase -> lowercase backtracking (o200k alt 1 vs alt 2)
+            "HELLOworld",
+            "FOOBARbaz",
+            "AbCdEf",
+            // mixed scripts
+            "hello 世界 hello",
+            "你好世界",
+            "Привет мир",
+            "नमस्ते दुनिया",
+            // emoji & non-BMP
+            "🌍",
+            "Hello 🌍 World",
+            "👨\u{200d}👩\u{200d}👧",
+            // code-like punctuation
+            "foo_bar.baz();",
+            "x++",
+            "a + b",
+            "x.y.z",
+            "!!!",
+            "...",
+            "---",
+            // apostrophe NOT followed by a contraction suffix
+            "don'X",
+            "'standalone",
+            "abc' def",
+        ]
+    }
+
+    fn assert_equivalent(pattern_str: &str, split: impl Fn(&str) -> Vec<(usize, usize)>) {
+        let regex = Regex::new(pattern_str).expect("regex must compile");
+        for &text in fixtures() {
+            let lexer_out = split(text);
+            let regex_out: Vec<_> = regex
+                .find_iter(text)
+                .map(|m| {
+                    let m = m.expect("regex match");
+                    (m.start(), m.end())
+                })
+                .collect();
+            assert_eq!(
+                lexer_out, regex_out,
+                "lexer/regex diverged on input {text:?}; pattern: {pattern_str}",
+            );
+        }
+    }
+
+    #[test]
+    fn o200k_base_lexer_matches_regex() {
+        assert_equivalent(PAT_STR_O200K_BASE, |t| super::split(t).collect());
+    }
+
+    #[test]
+    fn cl100k_base_lexer_matches_regex() {
+        assert_equivalent(PAT_STR_CL100K_BASE, |t| super::split_cl100k(t).collect());
+    }
+
+    #[test]
+    fn gpt2_lexer_matches_regex() {
+        assert_equivalent(PAT_STR_GPT2, |t| super::split_gpt2(t).collect());
+    }
+}
