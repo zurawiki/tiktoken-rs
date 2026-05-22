@@ -94,6 +94,15 @@ impl CoreBPE {
         let mut sorted_token_bytes: Vec<Vec<u8>> = encoder.keys().cloned().collect();
         sorted_token_bytes.sort();
 
+        // Build the 2-byte pair lookup table (~256 KB, ~1 ms one-time cost).
+        let mut pair_table: Box<[Rank; PAIR_TABLE_SIZE]> = Box::new([Rank::MAX; PAIR_TABLE_SIZE]);
+        for (key, &rank) in &encoder {
+            if key.len() == 2 {
+                let idx = ((key[0] as u16) << 8 | key[1] as u16) as usize;
+                pair_table[idx] = rank;
+            }
+        }
+
         Ok(Self {
             encoder,
             special_tokens_encoder,
@@ -104,6 +113,7 @@ impl CoreBPE {
                 .map(|_| special_regex.clone())
                 .collect(),
             sorted_token_bytes,
+            pair_table,
         })
     }
 
