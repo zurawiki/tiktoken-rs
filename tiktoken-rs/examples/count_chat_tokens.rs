@@ -1,5 +1,5 @@
 use std::error::Error;
-use tiktoken_rs::{get_chat_completion_max_tokens, ChatCompletionRequestMessage};
+use tiktoken_rs::{ChatCompletionRequestMessage, get_chat_completion_max_tokens};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let model = "gpt-4";

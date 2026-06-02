@@ -12,7 +12,8 @@ pub use singleton::*;
 pub use tiktoken_ext::openai_public::*;
 
 pub use patched_tiktoken::FromRank;
-pub use vendor_tiktoken::byte_pair_split;
 pub use vendor_tiktoken::CoreBPE;
 pub use vendor_tiktoken::DecodeKeyError;
+pub use vendor_tiktoken::EncodeError;
 pub use vendor_tiktoken::Rank;
+pub use vendor_tiktoken::byte_pair_split;

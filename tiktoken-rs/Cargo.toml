@@ -3,9 +3,9 @@ name = "tiktoken-rs"
 version = "0.11.0"
 description = "Library for encoding and decoding with the tiktoken library in Rust"
 include = ["assets/**/*", "src/**/*", "README.md"]
-edition = "2021"
+edition = "2024"
 authors = ["Roger Zurawicki <roger@zura.wiki>"]
-rust-version = "1.73.0"
+rust-version = "1.85.0"
 keywords = ["openai", "ai", "gpt", "bpe"]
 homepage = "https://github.com/zurawiki/tiktoken-rs"
 repository = "https://github.com/zurawiki/tiktoken-rs"
@@ -25,7 +25,7 @@ dhat = { version = "0.3.2", optional = true }
 fancy-regex = "0.17.0"
 lazy_static = "1.5.0"
 regex = "1.12.3"
-rustc-hash = "1.1.0"
+rustc-hash = "2"
 
 [features]
 async-openai = ["dep:async-openai"]

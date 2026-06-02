@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use tiktoken_rs::{num_tokens_from_messages, ChatCompletionRequestMessage};
+use tiktoken_rs::{ChatCompletionRequestMessage, num_tokens_from_messages};
 
 static SIZE_FACTOR: usize = 128;
 static CONTENT: &str = include_str!("./example_text.txt");

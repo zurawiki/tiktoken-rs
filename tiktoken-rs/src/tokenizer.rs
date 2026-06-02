@@ -30,15 +30,13 @@ pub enum Tokenizer {
 }
 
 // Keep this in sync with:
-// https://github.com/openai/tiktoken/blob/eedc856364506a9d4651645a0290eb0ba81e6935/tiktoken/model.py#L7-L27
+// https://github.com/openai/tiktoken/blob/0.13.0/tiktoken/model.py#L7-L28
 const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("o1-", Tokenizer::O200kBase),
     ("o3-", Tokenizer::O200kBase),
-    ("o4-", Tokenizer::O200kBase),
+    ("o4-mini-", Tokenizer::O200kBase),
     // chat
-    ("gpt-5.", Tokenizer::O200kBase), // e.g., gpt-5.4-mini, gpt-5.3-codex, gpt-5.2-pro
     ("gpt-5-", Tokenizer::O200kBase),
-    ("codex-mini", Tokenizer::O200kBase), // codex-mini-latest
     ("gpt-4.5-", Tokenizer::O200kBase),
     ("gpt-4.1-", Tokenizer::O200kBase),
     ("chatgpt-4o-", Tokenizer::O200kBase),
@@ -49,17 +47,21 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("gpt-oss-", Tokenizer::O200kHarmony),
 ];
 
+const EXTRA_MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
+    ("gpt-5.", Tokenizer::O200kBase),
+    ("codex-mini", Tokenizer::O200kBase),
+];
+
 // Keep this in sync with:
-// https://github.com/openai/tiktoken/blob/eedc856364506a9d4651645a0290eb0ba81e6935/tiktoken/model.py#L29-L84
+// https://github.com/openai/tiktoken/blob/0.13.0/tiktoken/model.py#L30-L86
 const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // reasoning
     ("o1", Tokenizer::O200kBase),
     ("o3", Tokenizer::O200kBase),
-    ("o4", Tokenizer::O200kBase),
+    ("o4-mini", Tokenizer::O200kBase),
     // chat
     ("gpt-5", Tokenizer::O200kBase),
     ("gpt-4.1", Tokenizer::O200kBase),
-    ("chatgpt-4o-latest", Tokenizer::O200kBase),
     ("gpt-4o", Tokenizer::O200kBase),
     ("gpt-4", Tokenizer::Cl100kBase),
     ("gpt-3.5-turbo", Tokenizer::Cl100kBase),
@@ -157,6 +159,12 @@ pub fn get_tokenizer(model_name: &str) -> Option<Tokenizer> {
     {
         return Some(tokenizer.1);
     }
+    if let Some(tokenizer) = EXTRA_MODEL_PREFIX_TO_TOKENIZER
+        .iter()
+        .find(|(model_prefix, _)| model_name.starts_with(*model_prefix))
+    {
+        return Some(tokenizer.1);
+    }
 
     None
 }
@@ -193,8 +201,15 @@ mod tests {
             get_tokenizer("codex-mini-latest"),
             Some(Tokenizer::O200kBase)
         );
-        // Edge case: gpt-5.0 matches the gpt-5. prefix
         assert_eq!(get_tokenizer("gpt-5.0"), Some(Tokenizer::O200kBase));
+        // Reasoning series
+        assert_eq!(get_tokenizer("o4-mini"), Some(Tokenizer::O200kBase));
+        assert_eq!(
+            get_tokenizer("o4-mini-2026-06-02"),
+            Some(Tokenizer::O200kBase)
+        );
+        assert_eq!(get_tokenizer("o4"), None);
+        assert_eq!(get_tokenizer("o4-pro"), None);
         // GPT-4 series
         assert_eq!(get_tokenizer("gpt-4o"), Some(Tokenizer::O200kBase));
         assert_eq!(

@@ -57,6 +57,24 @@ let tokens = bpe.encode_with_special_tokens(
 println!("Token count: {}", tokens.len());
 ```
 
+## Upgrading `encode` calls
+
+`CoreBPE::encode` mirrors upstream `tiktoken` and returns a `Result`.
+Propagate or unwrap the result before using the tokens:
+
+```rust
+use tiktoken_rs::o200k_base;
+
+let bpe = o200k_base().unwrap();
+let allowed = bpe.special_tokens();
+let (tokens, last_piece_token_len) = bpe.encode("hello <|endoftext|>", &allowed).unwrap();
+```
+
+The generic `encode_as` and `count` helpers also return `Result`.
+This release also follows upstream's Rust 2024 core, so projects need
+Rust 1.85 or newer. That floor comes from the vendored upstream code,
+not from a direct dependency MSRV.
+
 ## Counting max_tokens parameter for a chat completion request
 
 ```rust

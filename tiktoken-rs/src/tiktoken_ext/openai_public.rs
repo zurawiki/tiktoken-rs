@@ -6,7 +6,7 @@ pub const ENDOFPROMPT: &str = "<|endofprompt|>";
 
 /// Adaptation of the tiktoken crate for use in Rust projects
 use anyhow::Result;
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 
 use rustc_hash::FxHashMap as HashMap;
 

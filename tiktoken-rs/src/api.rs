@@ -1,12 +1,11 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 
 use crate::{
-    cl100k_base_singleton,
+    CoreBPE, cl100k_base_singleton,
     model::get_context_size,
     o200k_base_singleton, o200k_harmony_singleton, p50k_base_singleton, p50k_edit_singleton,
     r50k_base_singleton,
-    tokenizer::{get_tokenizer, Tokenizer},
-    CoreBPE,
+    tokenizer::{Tokenizer, get_tokenizer},
 };
 
 /// Returns the maximum number of tokens available for a text completion, given a model and prompt.

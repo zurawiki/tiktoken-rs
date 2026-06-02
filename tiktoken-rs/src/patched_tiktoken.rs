@@ -1,6 +1,6 @@
 use super::vendor_tiktoken::*;
-use anyhow::anyhow;
 use anyhow::Result;
+use anyhow::anyhow;
 use fancy_regex::Regex;
 use rustc_hash::FxHashMap as HashMap;
 use std::collections::HashSet;
@@ -152,16 +152,19 @@ impl CoreBPE {
 
     /// Like [`encode`](CoreBPE::encode), but converts each token from
     /// [`Rank`] (`u32`) into `T`.
+    ///
+    /// Returns the same error as [`encode`](CoreBPE::encode) if tokenization
+    /// fails.
     pub fn encode_as<T: FromRank>(
         &self,
         text: &str,
         allowed_special: &HashSet<&str>,
-    ) -> (Vec<T>, usize) {
-        let (tokens, last_piece_token_len) = self.encode(text, allowed_special);
-        (
+    ) -> Result<(Vec<T>, usize)> {
+        let (tokens, last_piece_token_len) = self.encode(text, allowed_special)?;
+        Ok((
             tokens.into_iter().map(T::from_rank).collect(),
             last_piece_token_len,
-        )
+        ))
     }
 
     // ====================
@@ -179,9 +182,9 @@ impl CoreBPE {
     /// Returns the number of tokens that `encode` would produce for the given
     /// `allowed_special` set, without returning the token list itself.
     ///
-    /// Equivalent to `self.encode(text, allowed_special).0.len()`.
-    pub fn count(&self, text: &str, allowed_special: &HashSet<&str>) -> usize {
-        self.encode(text, allowed_special).0.len()
+    /// Equivalent to `self.encode(text, allowed_special)?.0.len()`.
+    pub fn count(&self, text: &str, allowed_special: &HashSet<&str>) -> Result<usize> {
+        Ok(self.encode(text, allowed_special)?.0.len())
     }
 
     /// Returns the number of tokens that `encode_with_special_tokens` would

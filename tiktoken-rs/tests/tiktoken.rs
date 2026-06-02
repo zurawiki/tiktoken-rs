@@ -1,8 +1,8 @@
 use rustc_hash::FxHashMap as HashMap;
 
 use tiktoken_rs::{
-    byte_pair_split, cl100k_base, o200k_base, o200k_harmony, p50k_base, p50k_base_singleton,
-    p50k_edit, r50k_base, CoreBPE, Rank,
+    CoreBPE, Rank, byte_pair_split, cl100k_base, o200k_base, o200k_harmony, p50k_base,
+    p50k_base_singleton, p50k_edit, r50k_base,
 };
 
 #[test]
@@ -92,7 +92,9 @@ fn cl100k_split_test() {
     let tokenized = tokenized.unwrap();
     assert_eq!(
         tokenized,
-        vec!["This", " is", " a", " test", "        ", " with", " a", " lot", " of", " spaces"]
+        vec![
+            "This", " is", " a", " test", "        ", " with", " a", " lot", " of", " spaces"
+        ]
     );
 }
 
@@ -123,7 +125,9 @@ fn o200k_split_test() {
     let tokenized = tokenized.unwrap();
     assert_eq!(
         tokenized,
-        vec!["This", " is", " a", " test", "        ", " with", " a", " lot", " of", " spaces"]
+        vec![
+            "This", " is", " a", " test", "        ", " with", " a", " lot", " of", " spaces"
+        ]
     );
 }
 
@@ -294,8 +298,8 @@ fn test_encode_as_generic() {
 
     // encode_as: test tuple return
     let allowed = bpe.special_tokens();
-    let (enc, last_len) = bpe.encode(text, &allowed);
-    let (enc_usize, last_len_as): (Vec<usize>, usize) = bpe.encode_as(text, &allowed);
+    let (enc, last_len) = bpe.encode(text, &allowed).unwrap();
+    let (enc_usize, last_len_as): (Vec<usize>, usize) = bpe.encode_as(text, &allowed).unwrap();
     assert_eq!(
         enc.iter().map(|&t| t as usize).collect::<Vec<_>>(),
         enc_usize
@@ -308,6 +312,12 @@ fn assert_count_matches_encode(bpe: &CoreBPE, text: &str) {
     assert_eq!(
         bpe.count_with_special_tokens(text),
         bpe.encode_with_special_tokens(text).len()
+    );
+
+    let allowed = bpe.special_tokens();
+    assert_eq!(
+        bpe.count(text, &allowed).unwrap(),
+        bpe.encode(text, &allowed).unwrap().0.len()
     );
 }
 
@@ -331,5 +341,25 @@ fn count_matches_encode() {
         for text in &texts {
             assert_count_matches_encode(bpe, text);
         }
+    }
+}
+
+#[test]
+fn test_large_repeated_o200k_base() {
+    let bpe = o200k_base().unwrap();
+    let text = "x".repeat(1_000_000);
+    let tokens = bpe.encode_with_special_tokens(&text);
+    assert!(!tokens.is_empty());
+    assert_eq!(bpe.decode(&tokens).unwrap(), text);
+}
+
+#[test]
+fn test_large_merge_threshold_roundtrips() {
+    let bpe = o200k_base().unwrap();
+    for len in [99, 100, 101] {
+        let text = "x".repeat(len);
+        let tokens = bpe.encode_with_special_tokens(&text);
+        assert!(!tokens.is_empty(), "empty tokens for length {len}");
+        assert_eq!(bpe.decode(&tokens).unwrap(), text);
     }
 }

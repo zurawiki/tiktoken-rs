@@ -18,6 +18,131 @@ use rustc_hash::FxHashMap as HashMap;
 
 pub type Rank = u32;
 
+use std::collections::BinaryHeap;
+
+#[derive(Eq, PartialEq, Clone, Copy)]
+struct Merge {
+    start: usize,
+    rank: Rank,
+}
+
+impl Ord for Merge {
+    #[inline]
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other
+            .rank
+            .cmp(&self.rank)
+            .then_with(|| other.start.cmp(&self.start))
+    }
+}
+
+impl PartialOrd for Merge {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+struct State {
+    prev: usize,
+    end: usize,
+    next_end: usize,
+    next_rank: Rank,
+    cur_rank: Rank,
+}
+
+fn _byte_pair_merge_large(ranks: &HashMap<Vec<u8>, Rank>, piece: &[u8]) -> Vec<Rank> {
+    let mut state = Vec::with_capacity(piece.len());
+    state.push(State {
+        prev: usize::MAX,
+        end: 1,
+        next_end: 2,
+        next_rank: Rank::MAX,
+        cur_rank: Rank::MAX,
+    });
+
+    let mut heap = BinaryHeap::with_capacity(piece.len());
+    for i in 0..piece.len() - 1 {
+        if let Some(&rank) = ranks.get(&piece[i..i + 2]) {
+            heap.push(Merge { start: i, rank });
+            state[i].next_rank = rank;
+        }
+        // note this is happening offset by 1
+        state.push(State {
+            prev: i,
+            end: i + 2,
+            next_end: i + 3,
+            next_rank: Rank::MAX,
+            cur_rank: Rank::MAX,
+        });
+    }
+
+    // Repeatedly find the valid merge with smallest rank. We merge the (left) token that
+    // starts at `start` and ends at `state[start].end` with the (right) token that starts at
+    // `state[start].end` and ends at `state[start].next_end`.  We invalidate the old merges
+    // (the ones that started at `state[start].end` and ended at `state[start]`) and add the two
+    // new potential merges to the heap.
+
+    let potential_merge = {
+        #[inline(always)]
+        |state: &mut Vec<State>,
+         heap: &mut BinaryHeap<Merge>,
+         start: usize,
+         next_end_item: usize| {
+            state[start].next_end = next_end_item;
+            state[start].next_rank = Rank::MAX; // Always invalidate the old merge
+            if next_end_item <= piece.len()
+                && let Some(&rank) = ranks.get(&piece[start..next_end_item])
+            {
+                // We have a valid potential merge!
+                heap.push(Merge { start, rank });
+                state[start].next_rank = rank;
+            }
+        }
+    };
+
+    while let Some(left) = heap.pop() {
+        if left.rank == Rank::MAX {
+            break;
+        }
+        if left.rank != state[left.start].next_rank {
+            continue; // This merge was invalidated, ignore it
+        }
+
+        let left_start = left.start;
+        let right_start = state[left_start].end;
+        let right_end = state[left_start].next_end;
+        debug_assert!(right_end == state[right_start].end);
+        let right_next_end = state[right_start].next_end;
+
+        // Merge left and right into a single token
+        state[left_start].cur_rank = state[left_start].next_rank;
+        state[left_start].end = right_end;
+        potential_merge(&mut state, &mut heap, left_start, right_next_end);
+        if right_end < state.len() {
+            state[right_end].prev = left_start;
+        }
+        // Update the merge that ends at left_start
+        if left_start > 0 {
+            let prev_start = state[left_start].prev;
+            potential_merge(&mut state, &mut heap, prev_start, right_end);
+        }
+        // Invalidate the merge starting at right_start, so we ignore it when it comes off the heap
+        state[right_start].next_rank = Rank::MAX;
+    }
+
+    let mut result = Vec::new();
+    let mut i = 0;
+    while i < state.len() {
+        if state[i].cur_rank != Rank::MAX {
+            result.push(state[i].cur_rank);
+        } else {
+            result.push(ranks[&piece[i..state[i].end]]);
+        }
+        i = state[i].end;
+    }
+    result
+}
+
 fn _byte_pair_merge(ranks: &HashMap<Vec<u8>, Rank>, piece: &[u8]) -> Vec<(usize, Rank)> {
     // This is a vector of (start, rank).
     // The rank is of the pair starting at position start.
@@ -77,13 +202,18 @@ fn _byte_pair_merge(ranks: &HashMap<Vec<u8>, Rank>, piece: &[u8]) -> Vec<(usize,
 }
 
 pub fn byte_pair_encode(piece: &[u8], ranks: &HashMap<Vec<u8>, Rank>) -> Vec<Rank> {
-    if piece.len() == 1 {
+    let piece_len = piece.len();
+
+    if piece_len == 1 {
         return vec![ranks[piece]];
     }
-    _byte_pair_merge(ranks, piece)
-        .windows(2)
-        .map(|part| ranks[&piece[part[0].0..part[1].0]])
-        .collect()
+    if piece_len < 100 {
+        return _byte_pair_merge(ranks, piece)
+            .windows(2)
+            .map(|part| ranks[&piece[part[0].0..part[1].0]])
+            .collect();
+    }
+    _byte_pair_merge_large(ranks, piece)
 }
 
 pub fn byte_pair_split<'a>(piece: &'a [u8], ranks: &HashMap<Vec<u8>, Rank>) -> Vec<&'a [u8]> {
@@ -177,6 +307,19 @@ impl std::fmt::Display for DecodeError {
 
 impl std::error::Error for DecodeError {}
 
+#[derive(Debug, Clone)]
+pub struct EncodeError {
+    pub message: String,
+}
+
+impl std::fmt::Display for EncodeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Could not encode string: {}", self.message)
+    }
+}
+
+impl std::error::Error for EncodeError {}
+
 pub const MAX_NUM_THREADS: usize = 128;
 
 // #[cfg_attr(feature = "python", pyclass)]
@@ -237,7 +380,11 @@ impl CoreBPE {
         ret
     }
 
-    pub fn encode(&self, text: &str, allowed_special: &HashSet<&str>) -> (Vec<Rank>, usize) {
+    pub fn encode(
+        &self,
+        text: &str,
+        allowed_special: &HashSet<&str>,
+    ) -> Result<(Vec<Rank>, usize), EncodeError> {
         let special_regex = self._get_tl_special_regex();
         let regex = self._get_tl_regex();
         let mut ret = vec![];
@@ -263,8 +410,17 @@ impl CoreBPE {
             let end = next_special.map_or(text.len(), |m| m.start());
 
             // Okay, here we go, compare this logic to encode_ordinary
-            for mat in regex.find_iter(&text[start..end]) {
-                let piece = mat.unwrap().as_str().as_bytes();
+            for mat_res in regex.find_iter(&text[start..end]) {
+                let mat = match mat_res {
+                    Ok(m) => m,
+                    Err(e) => {
+                        return Err(EncodeError {
+                            message: format!("Regex error while tokenizing: {e}"),
+                        });
+                    }
+                };
+
+                let piece = mat.as_str().as_bytes();
                 if let Some(token) = self.encoder.get(piece) {
                     last_piece_token_len = 1;
                     ret.push(*token);
@@ -290,7 +446,7 @@ impl CoreBPE {
 
         // last_piece_token_len is how many tokens came from the last regex split. This is used
         // for determining unstable tokens, since you can't merge across (stable) regex splits
-        (ret, last_piece_token_len)
+        Ok((ret, last_piece_token_len))
     }
 
     fn _increase_last_piece_token_len(
@@ -309,12 +465,7 @@ impl CoreBPE {
             let token_is_all_space = |token| {
                 self.decoder
                     .get(token)
-                    .map(|token_bytes| {
-                        token_bytes
-                            .iter()
-                            .rev()
-                            .all(|&b| [b' ', b'\n', b'\t'].contains(&b))
-                    })
+                    .map(|token_bytes| token_bytes.iter().rev().all(|&b| b" \n\t".contains(&b)))
                     .unwrap_or(false)
             };
             if last_piece_token_len > 0
@@ -337,7 +488,7 @@ impl CoreBPE {
         text: &str,
         allowed_special: &HashSet<&str>,
     ) -> (Vec<Rank>, HashSet<Vec<Rank>>) {
-        let (tokens, last_piece_token_len) = self.encode(text, allowed_special);
+        let (tokens, last_piece_token_len) = self.encode(text, allowed_special).unwrap();
         if last_piece_token_len == 0 {
             // If last_piece_token_len is zero, the last token was a special token and we have
             // no unstable bytes
@@ -521,7 +672,7 @@ impl CoreBPE {
 
     pub fn encode_with_special_tokens(&self, text: &str) -> Vec<Rank> {
         let allowed_special = self.special_tokens();
-        self.encode(text, &allowed_special).0
+        self.encode(text, &allowed_special).unwrap().0
     }
 }
 
@@ -530,7 +681,7 @@ mod tests {
     // use fancy_regex::Regex;
     use rustc_hash::FxHashMap as HashMap;
 
-    use crate::{byte_pair_split, Rank};
+    use crate::{Rank, byte_pair_split};
 
     fn setup_ranks() -> HashMap<Vec<u8>, Rank> {
         HashMap::from_iter([(b"ab".to_vec(), 0), (b"cd".to_vec(), 1)])
