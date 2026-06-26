@@ -2,9 +2,7 @@
  * lists out the available tokenizers for different OpenAI models.
  */
 
-use std::collections::HashMap;
-
-use lazy_static::lazy_static;
+use std::{collections::HashMap, sync::LazyLock};
 
 /// Enum representing the available tokenizers for different OpenAI models.
 ///
@@ -112,15 +110,13 @@ const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("gpt-2", Tokenizer::Gpt2), // Maintains consistency with gpt-4
 ];
 
-lazy_static! {
-    static ref MODEL_TO_TOKENIZER_MAP: HashMap<&'static str, Tokenizer> = {
-        let mut map = HashMap::new();
-        MODEL_TO_TOKENIZER.iter().for_each(|&(model, tokenizer)| {
-            map.insert(model, tokenizer);
-        });
-        map
-    };
-}
+static MODEL_TO_TOKENIZER_MAP: LazyLock<HashMap<&'static str, Tokenizer>> = LazyLock::new(|| {
+    let mut map = HashMap::new();
+    MODEL_TO_TOKENIZER.iter().for_each(|&(model, tokenizer)| {
+        map.insert(model, tokenizer);
+    });
+    map
+});
 
 /// Returns the tokenizer type used by a model.
 ///

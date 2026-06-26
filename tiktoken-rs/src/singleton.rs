@@ -1,4 +1,4 @@
-use lazy_static::lazy_static;
+use std::sync::LazyLock;
 
 use crate::vendor_tiktoken::CoreBPE;
 
@@ -9,9 +9,7 @@ use crate::{cl100k_base, o200k_base, o200k_harmony, p50k_base, p50k_edit, r50k_b
 ///
 /// This function will only initialize the tokenizer once, and then return a reference the tokenizer
 pub fn r50k_base_singleton() -> &'static CoreBPE {
-    lazy_static! {
-        static ref R50K_BASE: CoreBPE = r50k_base().unwrap();
-    }
+    static R50K_BASE: LazyLock<CoreBPE> = LazyLock::new(|| r50k_base().unwrap());
     &R50K_BASE
 }
 
@@ -20,9 +18,7 @@ pub fn r50k_base_singleton() -> &'static CoreBPE {
 ///
 /// This function will only initialize the tokenizer once, and then return a reference the tokenizer.
 pub fn p50k_base_singleton() -> &'static CoreBPE {
-    lazy_static! {
-        static ref P50K_BASE: CoreBPE = p50k_base().unwrap();
-    }
+    static P50K_BASE: LazyLock<CoreBPE> = LazyLock::new(|| p50k_base().unwrap());
     &P50K_BASE
 }
 
@@ -31,9 +27,7 @@ pub fn p50k_base_singleton() -> &'static CoreBPE {
 ///
 /// This function will only initialize the tokenizer once, and then return a reference the tokenizer.
 pub fn p50k_edit_singleton() -> &'static CoreBPE {
-    lazy_static! {
-        static ref P50K_EDIT: CoreBPE = p50k_edit().unwrap();
-    }
+    static P50K_EDIT: LazyLock<CoreBPE> = LazyLock::new(|| p50k_edit().unwrap());
     &P50K_EDIT
 }
 
@@ -42,9 +36,7 @@ pub fn p50k_edit_singleton() -> &'static CoreBPE {
 ///
 /// This function will only initialize the tokenizer once, and then return a reference the tokenizer
 pub fn cl100k_base_singleton() -> &'static CoreBPE {
-    lazy_static! {
-        static ref CL100K_BASE: CoreBPE = cl100k_base().unwrap();
-    }
+    static CL100K_BASE: LazyLock<CoreBPE> = LazyLock::new(|| cl100k_base().unwrap());
     &CL100K_BASE
 }
 
@@ -53,9 +45,7 @@ pub fn cl100k_base_singleton() -> &'static CoreBPE {
 ///
 /// This function will only initialize the tokenizer once, and then return a reference the tokenizer
 pub fn o200k_base_singleton() -> &'static CoreBPE {
-    lazy_static! {
-        static ref O200K_BASE: CoreBPE = o200k_base().unwrap();
-    }
+    static O200K_BASE: LazyLock<CoreBPE> = LazyLock::new(|| o200k_base().unwrap());
     &O200K_BASE
 }
 
@@ -64,8 +54,6 @@ pub fn o200k_base_singleton() -> &'static CoreBPE {
 ///
 /// This function will only initialize the tokenizer once, and then return a reference the tokenizer
 pub fn o200k_harmony_singleton() -> &'static CoreBPE {
-    lazy_static! {
-        static ref O200K_HARMONY: CoreBPE = o200k_harmony().unwrap();
-    }
+    static O200K_HARMONY: LazyLock<CoreBPE> = LazyLock::new(|| o200k_harmony().unwrap());
     &O200K_HARMONY
 }
