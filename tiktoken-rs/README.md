@@ -75,6 +75,23 @@ This release also follows upstream's Rust 2024 core, so projects need
 Rust 1.85 or newer. That floor comes from the vendored upstream code,
 not from a direct dependency MSRV.
 
+## Decoding externally supplied token IDs
+
+`CoreBPE::_decode_native_and_split` now yields `Result<Vec<u8>, DecodeKeyError>`
+for each token. Unknown IDs produce an error instead of panicking; valid tokens
+keep their original order and boundaries. Direct callers must handle each result
+or collect into `Result<Vec<_>, _>`. The `split_by_token*` signatures are unchanged.
+
+```rust
+use tiktoken_rs::cl100k_base_singleton;
+
+let bpe = cl100k_base_singleton();
+let tokens = bpe.encode_ordinary("hello world");
+let pieces = bpe._decode_native_and_split(tokens)
+    .collect::<Result<Vec<_>, _>>()?;
+# Ok::<(), tiktoken_rs::DecodeKeyError>(())
+```
+
 ## Counting max_tokens parameter for a chat completion request
 
 ```rust
