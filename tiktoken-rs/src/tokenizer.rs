@@ -45,9 +45,8 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("gpt-oss-", Tokenizer::O200kHarmony),
 ];
 
-const EXTRA_MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
-    ("codex-mini", Tokenizer::O200kBase),
-];
+const EXTRA_MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] =
+    &[("codex-mini", Tokenizer::O200kBase)];
 
 // Keep this in sync with:
 // https://github.com/openai/tiktoken/blob/0.14.0/tiktoken/model.py#L29-L85
