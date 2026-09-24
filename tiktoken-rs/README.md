@@ -105,6 +105,12 @@ println!("max_tokens: {}", max_tokens);
 
 Need to enable the `async-openai` feature in your `Cargo.toml` file.
 
+The counting and budget helpers return an error for images, audio, and files,
+including assistant audio references. They previously omitted these inputs and
+could overstate the remaining budget. Text-only messages remain supported;
+message framing and tool-call overhead are estimates, and tool definitions are
+not included in the count.
+
 ```rust
 use tiktoken_rs::async_openai::get_chat_completion_max_tokens;
 use async_openai::types::chat::{
