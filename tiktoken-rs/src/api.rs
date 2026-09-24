@@ -80,7 +80,9 @@ pub struct ChatCompletionRequestMessage {
 ///
 /// num_tokens_from_messages returns the number of tokens required to encode the given messages into
 /// the given model. This is used to estimate the number of tokens that will be used for chat
-/// completion.
+/// completion. Message framing and function/tool-call overhead are estimates,
+/// not an exact reproduction of server-side serialization. Tool definitions and
+/// non-text inputs are not represented by this message type.
 ///
 /// # Arguments
 ///
@@ -682,6 +684,8 @@ pub mod async_openai {
             .unwrap_or_default()
     }
 
+    /// Extracts text and function/tool calls. Images, audio, and files are omitted.
+    /// Use this module's counting helpers to reject unsupported content before conversion.
     #[allow(deprecated)]
     impl From<&ChatCompletionRequestMessage> for super::ChatCompletionRequestMessage {
         fn from(m: &ChatCompletionRequestMessage) -> Self {
@@ -736,12 +740,38 @@ pub mod async_openai {
         }
     }
 
+    fn text_messages(
+        messages: &[ChatCompletionRequestMessage],
+    ) -> Result<Vec<super::ChatCompletionRequestMessage>> {
+        messages
+            .iter()
+            .enumerate()
+            .map(|(index, message)| {
+                let has_non_text = match message {
+                    ChatCompletionRequestMessage::User(msg) => match &msg.content {
+                        ChatCompletionRequestUserMessageContent::Text(_) => false,
+                        ChatCompletionRequestUserMessageContent::Array(parts) => parts.iter().any(
+                            |part| !matches!(part, ChatCompletionRequestUserMessageContentPart::Text(_)),
+                        ),
+                    },
+                    ChatCompletionRequestMessage::Assistant(msg) => msg.audio.is_some(),
+                    _ => false,
+                };
+                if has_non_text {
+                    anyhow::bail!(
+                        "Cannot estimate tokens for message {index}: images, audio, and files are not supported"
+                    );
+                }
+                Ok(message.into())
+            })
+            .collect()
+    }
+
     /// Calculates the total number of tokens for the given list of messages.
     ///
-    /// **Note:** Only text content is counted. Non-text parts (images, audio, files) are
-    /// silently skipped because they use a separate token formula based on resolution/duration,
-    /// not BPE encoding. If your messages contain non-text content, the returned count will
-    /// be lower than the actual API token usage.
+    /// Returns an error for images, audio (including assistant audio references), or files
+    /// because their token usage cannot be estimated by BPE text encoding. Text framing
+    /// and function/tool-call overhead remain estimates; tool definitions are not counted.
     ///
     /// # Arguments
     ///
@@ -755,12 +785,14 @@ pub mod async_openai {
         model: &str,
         messages: &[ChatCompletionRequestMessage],
     ) -> Result<usize> {
-        let messages: Vec<super::ChatCompletionRequestMessage> =
-            messages.iter().map(|m| m.into()).collect();
+        let messages = text_messages(messages)?;
         super::num_tokens_from_messages(model, &messages)
     }
 
     /// Retrieves the maximum token limit for chat completions.
+    ///
+    /// Returns an error for non-text content rather than calculating a budget from
+    /// an incomplete count. See [`num_tokens_from_messages`] for estimation limits.
     ///
     /// # Arguments
     ///
@@ -774,8 +806,7 @@ pub mod async_openai {
         model: &str,
         messages: &[ChatCompletionRequestMessage],
     ) -> Result<usize> {
-        let messages: Vec<super::ChatCompletionRequestMessage> =
-            messages.iter().map(|m| m.into()).collect();
+        let messages = text_messages(messages)?;
         super::get_chat_completion_max_tokens(model, &messages)
     }
 
@@ -787,6 +818,77 @@ pub mod async_openai {
             ChatCompletionMessageToolCall, ChatCompletionRequestAssistantMessage,
             ChatCompletionRequestSystemMessage, ChatCompletionRequestUserMessage,
         };
+
+        #[test]
+        fn non_text_user_parts_are_rejected_by_both_helpers() {
+            for part in [
+                ChatCompletionRequestUserMessageContentPart::ImageUrl(Default::default()),
+                ChatCompletionRequestUserMessageContentPart::InputAudio(Default::default()),
+                ChatCompletionRequestUserMessageContentPart::File(Default::default()),
+            ] {
+                let messages = [ChatCompletionRequestMessage::User(
+                    ChatCompletionRequestUserMessage {
+                        content: ChatCompletionRequestUserMessageContent::Array(vec![
+                            ChatCompletionRequestUserMessageContentPart::Text(
+                                async_openai::types::chat::ChatCompletionRequestMessageContentPartText {
+                                    text: "Describe this attachment".to_string(),
+                                },
+                            ),
+                            part,
+                        ]),
+                        name: None,
+                    },
+                )];
+                for result in [
+                    num_tokens_from_messages("gpt-4o", &messages),
+                    get_chat_completion_max_tokens("gpt-4o", &messages),
+                ] {
+                    assert!(result.unwrap_err().to_string().contains("message 0"));
+                }
+            }
+        }
+
+        #[test]
+        fn assistant_audio_is_rejected_by_both_helpers() {
+            let messages = [ChatCompletionRequestMessage::Assistant(
+                ChatCompletionRequestAssistantMessage {
+                    audio: Some(Default::default()),
+                    ..Default::default()
+                },
+            )];
+            assert!(num_tokens_from_messages("gpt-4o", &messages).is_err());
+            assert!(get_chat_completion_max_tokens("gpt-4o", &messages).is_err());
+        }
+
+        #[test]
+        fn text_arrays_match_plain_text_counts_and_budgets() {
+            let plain = [ChatCompletionRequestMessage::User(
+                ChatCompletionRequestUserMessage {
+                    content: ChatCompletionRequestUserMessageContent::Text("Hello world".into()),
+                    name: None,
+                },
+            )];
+            let array = [ChatCompletionRequestMessage::User(
+                ChatCompletionRequestUserMessage {
+                    content: ChatCompletionRequestUserMessageContent::Array(vec![
+                        ChatCompletionRequestUserMessageContentPart::Text(
+                            async_openai::types::chat::ChatCompletionRequestMessageContentPartText {
+                                text: "Hello world".into(),
+                            },
+                        ),
+                    ]),
+                    name: None,
+                },
+            )];
+            assert_eq!(
+                num_tokens_from_messages("gpt-4o", &plain).unwrap(),
+                num_tokens_from_messages("gpt-4o", &array).unwrap()
+            );
+            assert_eq!(
+                get_chat_completion_max_tokens("gpt-4o", &plain).unwrap(),
+                get_chat_completion_max_tokens("gpt-4o", &array).unwrap()
+            );
+        }
 
         #[test]
         fn test_num_tokens_from_messages_system() {
