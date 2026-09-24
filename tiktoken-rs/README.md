@@ -1,29 +1,18 @@
-## `tiktoken-rs`
+# tiktoken-rs
 
-[![Github Contributors](https://img.shields.io/github/contributors/zurawiki/tiktoken-rs.svg)](https://github.com/zurawiki/tiktoken-rs/graphs/contributors)
-[![Github Stars](https://img.shields.io/github/stars/zurawiki/tiktoken-rs.svg)](https://github.com/zurawiki/tiktoken-rs/stargazers)
+[![crates.io](https://img.shields.io/crates/v/tiktoken-rs.svg)](https://crates.io/crates/tiktoken-rs)
+[![Documentation](https://docs.rs/tiktoken-rs/badge.svg)](https://docs.rs/tiktoken-rs)
 [![CI](https://github.com/zurawiki/tiktoken-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/zurawiki/tiktoken-rs/actions/workflows/ci.yml)
 
-[![crates.io status](https://img.shields.io/crates/v/tiktoken-rs.svg)](https://crates.io/crates/tiktoken-rs)
-[![crates.io downloads](https://img.shields.io/crates/d/tiktoken-rs.svg)](https://crates.io/crates/tiktoken-rs)
-[![Rust dependency status](https://deps.rs/repo/github/zurawiki/tiktoken-rs/status.svg)](https://deps.rs/repo/github/zurawiki/tiktoken-rs)
+Count tokens, encode text into token IDs, and decode IDs back into text using
+OpenAI's tiktoken tokenizers. Tokenization runs locally with vocabularies bundled
+in the crate.
 
-Rust library for encoding, decoding, and counting tokens with OpenAI's tiktoken
-tokenizers.
+[API reference](https://docs.rs/tiktoken-rs) ·
+[Examples](https://github.com/zurawiki/tiktoken-rs/tree/main/tiktoken-rs/examples) ·
+[Releases and migration notes](https://github.com/zurawiki/tiktoken-rs/releases)
 
-Includes tokenizers for GPT-5.4, GPT-5, GPT-4.1, GPT-4o, o1, o3, o4-mini, and gpt-oss models.
-
-> **Scope:** This crate is focused on OpenAI tokenizers (tiktoken). For non-OpenAI models
-> (Llama, Gemini, Mistral, etc.), use the [HuggingFace `tokenizers`](https://crates.io/crates/tokenizers) crate.
-
-# Examples
-
-For working examples, see the [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/tiktoken-rs/examples) directory in the repository.
-
-# Usage
-
-See the crate's [`rust-version`](https://github.com/zurawiki/tiktoken-rs/blob/main/tiktoken-rs/Cargo.toml)
-for the minimum supported Rust compiler.
+## Count tokens
 
 Add the library to your project:
 
@@ -31,140 +20,128 @@ Add the library to your project:
 cargo add tiktoken-rs
 ```
 
-Use the tokenizers from your Rust code:
-
-## Counting token length
+Choose the model you are sending text to, then count its tokens:
 
 ```rust
-use tiktoken_rs::o200k_base;
+use tiktoken_rs::bpe_for_model;
 
-let bpe = o200k_base().unwrap();
-let tokens = bpe.encode_with_special_tokens(
-  "This is a sentence   with spaces"
-);
-println!("Token count: {}", tokens.len());
+let tokenizer = bpe_for_model("gpt-4o").expect("supported model");
+let text = "Hello, world!";
+println!("{} tokens", tokenizer.count_ordinary(text));
 ```
 
-For repeated calls, use the singleton to avoid re-initializing the tokenizer:
+`bpe_for_model` selects the model's encoding and reuses a cached tokenizer.
+It returns an error if the model name is not recognized. `count_ordinary` treats
+the entire input as plain text, including strings that look like special tokens.
+
+For the minimum supported Rust compiler, see
+[`rust-version` in Cargo.toml](https://github.com/zurawiki/tiktoken-rs/blob/main/tiktoken-rs/Cargo.toml).
+
+## Encode and decode text
+
+Encoding returns token IDs. Decoding those IDs reconstructs the original text:
 
 ```rust
-use tiktoken_rs::o200k_base_singleton;
+use tiktoken_rs::bpe_for_model;
 
-let bpe = o200k_base_singleton();
-let tokens = bpe.encode_with_special_tokens(
-  "This is a sentence   with spaces"
-);
-println!("Token count: {}", tokens.len());
+let tokenizer = bpe_for_model("gpt-4o").expect("supported model");
+let text = "Hello, world!";
+let tokens = tokenizer.encode_ordinary(text);
+let decoded = tokenizer.decode(&tokens).expect("valid tokens and UTF-8");
+
+assert_eq!(decoded, text);
 ```
 
-## Encoding with special tokens
+Decode with the same encoding used to create the IDs. `decode` returns an error
+for unknown token IDs or invalid UTF-8. Use `decode_bytes` when you need bytes
+rather than a UTF-8 string—for example, when decoding individual tokens that may
+contain only part of a character.
 
-`CoreBPE::encode` accepts a set of allowed special tokens and returns a `Result`
-containing the encoded tokens and the last piece's token count. Propagate or
-handle encoding errors before using the tokens:
+## Choose an encoding directly
+
+If you know the encoding name, use its constructor or cached singleton, such as
+`o200k_base()` or `o200k_base_singleton()`. Prefer the singleton for repeated calls
+to avoid loading the vocabulary each time.
+
+| Encoding | Example models or uses |
+| --- | --- |
+| `o200k_base` | GPT-4o, GPT-4.1, GPT-5, o1, o3 |
+| `o200k_harmony` | gpt-oss |
+| `cl100k_base` | GPT-4, GPT-3.5 Turbo, text-embedding-3 |
+| `p50k_base` | Legacy Codex, text-davinci-002, text-davinci-003 |
+| `p50k_edit` | Legacy edit models |
+| `r50k_base` | GPT-2, GPT-3 |
+
+These are OpenAI tokenizers. For other model families, such as Llama or Mistral,
+use a library that supports their tokenizers, such as
+[Hugging Face tokenizers](https://crates.io/crates/tokenizers).
+
+## Handle special tokens
+
+Use `encode_ordinary` for plain text. If your input deliberately includes special
+token markers, `encode_with_special_tokens` recognizes the encoding's markers:
 
 ```rust
-use tiktoken_rs::o200k_base;
+use tiktoken_rs::cl100k_base_singleton;
 
-let bpe = o200k_base().unwrap();
-let allowed = bpe.special_tokens();
-let (tokens, last_piece_token_len) = bpe.encode("hello <|endoftext|>", &allowed).unwrap();
+let tokenizer = cl100k_base_singleton();
+let tokens = tokenizer.encode_with_special_tokens("Hello <|endoftext|>");
+assert_eq!(tokenizer.decode(&tokens).unwrap(), "Hello <|endoftext|>");
 ```
 
-The generic `encode_as` and `count` helpers also return `Result`.
+For control over which markers are allowed, use `encode(text, &allowed_special)`.
+It returns a `Result`; markers outside the allowed set are treated as ordinary
+text. The `count` and `count_with_special_tokens` helpers provide the corresponding
+token counts.
 
-## Counting max_tokens parameter for a chat completion request
+## Estimate chat token usage
+
+Chat requests include message framing as well as text. Use
+`num_tokens_from_messages` to include an estimate of that overhead:
 
 ```rust
-use tiktoken_rs::{get_chat_completion_max_tokens, ChatCompletionRequestMessage};
+use tiktoken_rs::{ChatCompletionRequestMessage, num_tokens_from_messages};
 
-let messages = vec![
-    ChatCompletionRequestMessage {
-        content: Some("You are a helpful assistant that only speaks French.".to_string()),
-        role: "system".to_string(),
-        ..Default::default()
-    },
-    ChatCompletionRequestMessage {
-        content: Some("Hello, how are you?".to_string()),
-        role: "user".to_string(),
-        ..Default::default()
-    },
-    ChatCompletionRequestMessage {
-        content: Some("Parlez-vous francais?".to_string()),
-        role: "system".to_string(),
-        ..Default::default()
-    },
-];
-let max_tokens = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
-println!("max_tokens: {}", max_tokens);
+let messages = [ChatCompletionRequestMessage {
+    role: "user".into(),
+    content: Some("Explain Rust's ownership model.".into()),
+    ..Default::default()
+}];
+
+let estimate = num_tokens_from_messages("gpt-4o", &messages).unwrap();
+println!("Estimated prompt tokens: {estimate}");
 ```
 
-## Counting max_tokens parameter for a chat completion request with [async-openai](https://crates.io/crates/async-openai)
+Chat counts are estimates, not a guarantee of the API's reported usage. Message
+framing and tool-call overhead can vary; tool definitions and image, audio, or
+file token usage are not covered by this text-based estimate.
 
-Need to enable the `async-openai` feature in your `Cargo.toml` file.
+`get_chat_completion_max_tokens` estimates the **remaining context capacity**
+after the messages. A model also has a separate output limit: cap the result at
+that limit before using it as `max_tokens` or `max_completion_tokens`. Check the
+[model documentation](https://developers.openai.com/api/docs/models) for limits.
 
-```rust
-use tiktoken_rs::async_openai::get_chat_completion_max_tokens;
-use async_openai::types::chat::{
-    ChatCompletionRequestMessage, ChatCompletionRequestSystemMessage,
-    ChatCompletionRequestSystemMessageContent, ChatCompletionRequestUserMessage,
-    ChatCompletionRequestUserMessageContent,
-};
+### Use async-openai message types
 
-let messages = vec![
-    ChatCompletionRequestMessage::System(ChatCompletionRequestSystemMessage {
-        content: ChatCompletionRequestSystemMessageContent::Text(
-            "You are a helpful assistant that only speaks French.".to_string(),
-        ),
-        name: None,
-    }),
-    ChatCompletionRequestMessage::User(ChatCompletionRequestUserMessage {
-        content: ChatCompletionRequestUserMessageContent::Text(
-            "Hello, how are you?".to_string(),
-        ),
-        name: None,
-    }),
-];
-let max_tokens = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
-println!("max_tokens: {}", max_tokens);
+Enable the optional integration:
+
+```sh
+cargo add tiktoken-rs --features async-openai
 ```
 
-`tiktoken` supports these encodings used by OpenAI models:
+`tiktoken_rs::async_openai::num_tokens_from_messages` and
+`tiktoken_rs::async_openai::get_chat_completion_max_tokens` accept
+`async_openai` chat message types. The integration uses the dependency version
+listed in the crate's [Cargo.toml](https://github.com/zurawiki/tiktoken-rs/blob/main/tiktoken-rs/Cargo.toml).
 
-| Encoding name           | OpenAI models                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| `o200k_harmony`         | `gpt-oss-20b`, `gpt-oss-120b`                                                  |
-| `o200k_base`            | GPT-5 series, `o1`/`o3`/`o4` series, `gpt-4o`, `gpt-4.5`, `gpt-4.1`, `codex-*` |
-| `cl100k_base`           | `gpt-4`, `gpt-3.5-turbo`, `text-embedding-ada-002`, `text-embedding-3-*`       |
-| `p50k_base`             | Code models, `text-davinci-002`, `text-davinci-003`                            |
-| `p50k_edit`             | Edit models like `text-davinci-edit-001`, `code-davinci-edit-001`              |
-| `r50k_base` (or `gpt2`) | GPT-3 models like `davinci`                                                    |
+## Contributing
 
-### Context sizes
+Bug reports and improvements are welcome. See the
+[contribution guide](https://github.com/zurawiki/tiktoken-rs/blob/main/CONTRIBUTING.md)
+or [open an issue](https://github.com/zurawiki/tiktoken-rs/issues).
 
-| Model                                                               | Context window |
-| ------------------------------------------------------------------- | -------------- |
-| `gpt-5.4`, `gpt-5.4-pro`                                            | 1,050,000      |
-| `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`                           | 1,047,576      |
-| `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano` | 400,000        |
-| `o1`, `o3`, `o3-mini`, `o3-pro`, `o4-mini`                          | 200,000        |
-| `codex-mini`                                                        | 200,000        |
-| `gpt-oss`                                                           | 131,072        |
-| `gpt-4o`, `gpt-4o-mini`                                             | 128,000        |
-| `o1-mini`, `gpt-5.3-codex-spark`                                    | 128,000        |
-| `gpt-3.5-turbo`                                                     | 16,385         |
-| `gpt-4`                                                             | 8,192          |
+## License and acknowledgements
 
-See the [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/tiktoken-rs/examples) in the repo for use cases. For more context on the different tokenizers, see the [OpenAI Cookbook](https://github.com/openai/openai-cookbook/blob/66b988407d8d13cad5060a881dc8c892141f2d5c/examples/How_to_count_tokens_with_tiktoken.ipynb)
-
-# Encountered any bugs?
-
-If you encounter any bugs or have any suggestions for improvements, please open an issue on the repository.
-
-# Acknowledgements
-
-Thanks @spolu for the original code, and `.tiktoken` files.
-
-# License
-
-This project is licensed under the [MIT License](./LICENSE).
+[MIT](https://github.com/zurawiki/tiktoken-rs/blob/main/LICENSE). Based on
+[OpenAI's tiktoken](https://github.com/openai/tiktoken). Thanks to @spolu for the
+original code and tokenizer files.
