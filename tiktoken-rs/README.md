@@ -145,13 +145,13 @@ println!("max_tokens: {}", max_tokens);
 
 ### Context sizes
 
-`get_context_size` recognizes `gpt-6-astra`, `gpt-6-sol`, and `gpt-6-luna`.
+`get_context_size` uses a 1,050,000-token context window for names starting with `gpt-6`.
 GPT-6 tokenizer lookup and token-budget helpers are not supported; its encoding
 is not mapped by upstream tiktoken.
 
 | Model                                                               | Context window |
 | ------------------------------------------------------------------- | -------------- |
-| `gpt-6-astra`, `gpt-6-sol`, `gpt-6-luna`                           | 1,050,000      |
+| `gpt-6*`                                                        | 1,050,000      |
 | `gpt-5.4`, `gpt-5.4-pro`                                            | 1,050,000      |
 | `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`                           | 1,047,576      |
 | `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano` | 400,000        |

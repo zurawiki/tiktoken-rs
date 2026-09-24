@@ -28,12 +28,18 @@ fn test_o_series_context_size() {
 
 #[test]
 fn test_gpt6_context_size() {
-    for model in ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna"] {
+    for model in [
+        "gpt-6",
+        "gpt-6-astra",
+        "gpt-6-sol",
+        "gpt-6-luna",
+        "gpt-6-future",
+        "gpt-6.1",
+        "gpt-6-astra-2026-09-03",
+    ] {
         assert_eq!(get_context_size(model), Some(1_050_000), "{model}");
     }
-    for model in ["gpt-6", "gpt-6-future", "gpt-6-astra-unknown"] {
-        assert_eq!(get_context_size(model), None, "{model}");
-    }
+    assert_eq!(get_context_size("gpt-7"), None);
 }
 
 #[test]

@@ -37,7 +37,7 @@ pub fn get_context_size(model: &str) -> Option<usize> {
         let base = rest.split(':').next().unwrap_or(rest);
         return get_context_size(base);
     }
-    if matches!(model, "gpt-6-astra" | "gpt-6-sol" | "gpt-6-luna") {
+    if starts_with_any!(model, "gpt-6") {
         return Some(1_050_000);
     }
     if starts_with_any!(model, "gpt-5.4-mini", "gpt-5.4-nano") {
