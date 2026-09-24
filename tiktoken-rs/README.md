@@ -8,30 +8,30 @@
 [![crates.io downloads](https://img.shields.io/crates/d/tiktoken-rs.svg)](https://crates.io/crates/tiktoken-rs)
 [![Rust dependency status](https://deps.rs/repo/github/zurawiki/tiktoken-rs/status.svg)](https://deps.rs/repo/github/zurawiki/tiktoken-rs)
 
-Rust library for tokenizing text with OpenAI models using tiktoken.
+Rust library for encoding, decoding, and counting tokens with OpenAI's tiktoken
+tokenizers.
 
-This library provides a set of ready-made tokenizer libraries for working with GPT, tiktoken and related OpenAI models. Use cases cover tokenizing and counting tokens in text inputs.
-
-This library is built on top of the `tiktoken` library and includes some additional features and enhancements for ease of use with Rust code.
-
-Supports all current OpenAI models including GPT-5.4, GPT-5, GPT-4.1, GPT-4o, o1, o3, o4-mini, and gpt-oss models.
+Includes tokenizers for GPT-5.4, GPT-5, GPT-4.1, GPT-4o, o1, o3, o4-mini, and gpt-oss models.
 
 > **Scope:** This crate is focused on OpenAI tokenizers (tiktoken). For non-OpenAI models
 > (Llama, Gemini, Mistral, etc.), use the [HuggingFace `tokenizers`](https://crates.io/crates/tokenizers) crate.
 
 # Examples
 
-For full working examples for all supported features, see the [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/tiktoken-rs/examples) directory in the repository.
+For working examples, see the [examples](https://github.com/zurawiki/tiktoken-rs/tree/main/tiktoken-rs/examples) directory in the repository.
 
 # Usage
 
-1. Install this tool locally with `cargo`
+See the crate's [`rust-version`](https://github.com/zurawiki/tiktoken-rs/blob/main/tiktoken-rs/Cargo.toml)
+for the minimum supported Rust compiler.
+
+Add the library to your project:
 
 ```sh
 cargo add tiktoken-rs
 ```
 
-Then in your rust code, call the API
+Use the tokenizers from your Rust code:
 
 ## Counting token length
 
@@ -57,10 +57,11 @@ let tokens = bpe.encode_with_special_tokens(
 println!("Token count: {}", tokens.len());
 ```
 
-## Upgrading `encode` calls
+## Encoding with special tokens
 
-`CoreBPE::encode` mirrors upstream `tiktoken` and returns a `Result`.
-Propagate or unwrap the result before using the tokens:
+`CoreBPE::encode` accepts a set of allowed special tokens and returns a `Result`
+containing the encoded tokens and the last piece's token count. Propagate or
+handle encoding errors before using the tokens:
 
 ```rust
 use tiktoken_rs::o200k_base;
@@ -71,9 +72,6 @@ let (tokens, last_piece_token_len) = bpe.encode("hello <|endoftext|>", &allowed)
 ```
 
 The generic `encode_as` and `count` helpers also return `Result`.
-This release also follows upstream's Rust 2024 core, so projects need
-Rust 1.85 or newer. That floor comes from the vendored upstream code,
-not from a direct dependency MSRV.
 
 ## Counting max_tokens parameter for a chat completion request
 
