@@ -77,10 +77,11 @@ not from a direct dependency MSRV.
 
 ## Decoding externally supplied token IDs
 
-`CoreBPE::_decode_native_and_split` now yields `Result<Vec<u8>, DecodeKeyError>`
-for each token. Unknown IDs produce an error instead of panicking; valid tokens
-keep their original order and boundaries. Direct callers must handle each result
-or collect into `Result<Vec<_>, _>`. The `split_by_token*` signatures are unchanged.
+`CoreBPE::_decode_native_and_split` decodes token IDs into byte chunks in input
+order, preserving token boundaries. Each iterator item is a
+`Result<Vec<u8>, DecodeKeyError>`; an unknown ID yields a `DecodeKeyError`.
+Handle each result individually, or collect into `Result<Vec<_>, _>` to stop at
+the first error.
 
 ```rust
 use tiktoken_rs::cl100k_base_singleton;
