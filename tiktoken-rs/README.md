@@ -14,7 +14,7 @@ This library provides a set of ready-made tokenizer libraries for working with G
 
 This library is built on top of the `tiktoken` library and includes some additional features and enhancements for ease of use with Rust code.
 
-Supports all current OpenAI models including GPT-5.4, GPT-5, GPT-4.1, GPT-4o, o1, o3, o4-mini, and gpt-oss models.
+Supported OpenAI models include GPT-5.4, GPT-5, GPT-4.1, GPT-4o, o1, o3, o4-mini, and gpt-oss models.
 
 > **Scope:** This crate is focused on OpenAI tokenizers (tiktoken). For non-OpenAI models
 > (Llama, Gemini, Mistral, etc.), use the [HuggingFace `tokenizers`](https://crates.io/crates/tokenizers) crate.
@@ -25,15 +25,15 @@ For full working examples for all supported features, see the [examples](https:/
 
 # Usage
 
-1. Install this tool locally with `cargo`
+Add the library to your project:
 
 ```sh
 cargo add tiktoken-rs
 ```
 
-Then in your rust code, call the API
+Use the examples below in your Rust code.
 
-## Counting token length
+## Counting tokens
 
 ```rust
 use tiktoken_rs::o200k_base;
@@ -57,7 +57,7 @@ let tokens = bpe.encode_with_special_tokens(
 println!("Token count: {}", tokens.len());
 ```
 
-## Upgrading `encode` calls
+## Encoding text
 
 `CoreBPE::encode` mirrors upstream `tiktoken` and returns a `Result`.
 Propagate or unwrap the result before using the tokens:
@@ -71,9 +71,7 @@ let (tokens, last_piece_token_len) = bpe.encode("hello <|endoftext|>", &allowed)
 ```
 
 The generic `encode_as` and `count` helpers also return `Result`.
-This release also follows upstream's Rust 2024 core, so projects need
-Rust 1.85 or newer. That floor comes from the vendored upstream code,
-not from a direct dependency MSRV.
+The crate requires Rust 1.85 or newer.
 
 ## Estimating remaining context for a chat completion request
 
@@ -109,9 +107,11 @@ println!("Remaining context: {}", remaining_context);
 
 ## Estimating remaining context for a chat completion request with [async-openai](https://crates.io/crates/async-openai)
 
-Need to enable the `async-openai` feature in your `Cargo.toml` file.
+Enable the `async-openai` feature in your `Cargo.toml` file.
 
 ```rust
+# #[cfg(feature = "async-openai")]
+# {
 use tiktoken_rs::async_openai::get_chat_completion_max_tokens;
 use async_openai::types::chat::{
     ChatCompletionRequestMessage, ChatCompletionRequestSystemMessage,
@@ -135,6 +135,7 @@ let messages = vec![
 ];
 let remaining_context = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
 println!("Remaining context: {}", remaining_context);
+# }
 ```
 
 `tiktoken` supports these encodings used by OpenAI models:

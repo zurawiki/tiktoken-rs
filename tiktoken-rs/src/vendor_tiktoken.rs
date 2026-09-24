@@ -90,12 +90,12 @@ fn _byte_pair_merge_large(ranks: &HashMap<Vec<u8>, Rank>, piece: &[u8]) -> Vec<R
          next_end_item: usize| {
             state[start].next_end = next_end_item;
             state[start].next_rank = Rank::MAX; // Always invalidate the old merge
-            if next_end_item <= piece.len()
-                && let Some(&rank) = ranks.get(&piece[start..next_end_item])
-            {
-                // We have a valid potential merge!
-                heap.push(Merge { start, rank });
-                state[start].next_rank = rank;
+            if next_end_item <= piece.len() {
+                if let Some(&rank) = ranks.get(&piece[start..next_end_item]) {
+                    // We have a valid potential merge!
+                    heap.push(Merge { start, rank });
+                    state[start].next_rank = rank;
+                }
             }
         }
     };
