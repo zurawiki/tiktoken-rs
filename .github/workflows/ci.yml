@@ -96,8 +96,18 @@ jobs:
                   echo "Current version: $CURRENT_VERSION"
 
                   SPARSE_INDEX_URL="https://index.crates.io/ti/kt/tiktoken-rs"
-                  if curl -s --retry 3 -H "User-Agent: tiktoken-rs-ci (https://github.com/zurawiki/tiktoken-rs)" \
-                      "$SPARSE_INDEX_URL" | grep -Fq "\"vers\":\"$CURRENT_VERSION\""; then
+                  INDEX_FILE="$RUNNER_TEMP/tiktoken-rs-index"
+                  curl --fail --silent --show-error --retry 3 \
+                      -H "User-Agent: tiktoken-rs-ci (https://github.com/zurawiki/tiktoken-rs)" \
+                      --output "$INDEX_FILE" "$SPARSE_INDEX_URL"
+                  PUBLISHED="$(jq -s --arg version "$CURRENT_VERSION" '
+                      if length == 0 or any(.[]; (.vers | type) != "string") then
+                          error("Invalid crates.io index response")
+                      else
+                          any(.[]; .vers == $version)
+                      end
+                  ' "$INDEX_FILE")"
+                  if [[ "$PUBLISHED" == true ]]; then
                     echo "Version $CURRENT_VERSION already published"
                     echo "is_new_version=no" >> "$GITHUB_OUTPUT"
                   else
