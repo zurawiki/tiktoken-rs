@@ -28,13 +28,13 @@ pub enum Tokenizer {
 }
 
 // Keep this in sync with:
-// https://github.com/openai/tiktoken/blob/0.13.0/tiktoken/model.py#L7-L28
+// https://github.com/openai/tiktoken/blob/0.14.0/tiktoken/model.py#L7-L27
 const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("o1-", Tokenizer::O200kBase),
     ("o3-", Tokenizer::O200kBase),
     ("o4-mini-", Tokenizer::O200kBase),
     // chat
-    ("gpt-5-", Tokenizer::O200kBase),
+    ("gpt-5", Tokenizer::O200kBase),
     ("gpt-4.5-", Tokenizer::O200kBase),
     ("gpt-4.1-", Tokenizer::O200kBase),
     ("chatgpt-4o-", Tokenizer::O200kBase),
@@ -45,13 +45,11 @@ const MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     ("gpt-oss-", Tokenizer::O200kHarmony),
 ];
 
-const EXTRA_MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
-    ("gpt-5.", Tokenizer::O200kBase),
-    ("codex-mini", Tokenizer::O200kBase),
-];
+const EXTRA_MODEL_PREFIX_TO_TOKENIZER: &[(&str, Tokenizer)] =
+    &[("codex-mini", Tokenizer::O200kBase)];
 
 // Keep this in sync with:
-// https://github.com/openai/tiktoken/blob/0.13.0/tiktoken/model.py#L30-L86
+// https://github.com/openai/tiktoken/blob/0.14.0/tiktoken/model.py#L29-L85
 const MODEL_TO_TOKENIZER: &[(&str, Tokenizer)] = &[
     // reasoning
     ("o1", Tokenizer::O200kBase),
@@ -168,6 +166,18 @@ pub fn get_tokenizer(model_name: &str) -> Option<Tokenizer> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_gpt5_prefix_matches_upstream() {
+        // Upstream accepts any name beginning with "gpt-5", including unknown suffixes.
+        for suffix in ["", "-mini", ".4", "_future"] {
+            assert_eq!(
+                get_tokenizer(&format!("gpt-5{suffix}")),
+                Some(Tokenizer::O200kBase)
+            );
+        }
+        assert_eq!(get_tokenizer("gpt-6_future"), None);
+    }
 
     #[test]
     fn test_get_tokenizer() {
