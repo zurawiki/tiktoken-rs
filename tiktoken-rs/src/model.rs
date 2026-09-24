@@ -70,7 +70,7 @@ pub fn get_context_size(model: &str) -> Option<usize> {
     if starts_with_any!(model, "gpt-4.5") {
         return Some(128_000);
     }
-    if starts_with_any!(model, "gpt-4-turbo-") {
+    if model == "gpt-4-turbo" || starts_with_any!(model, "gpt-4-turbo-") {
         return Some(128_000);
     }
     if starts_with_any!(model, "gpt-4-0125") {

@@ -73,7 +73,13 @@ let (tokens, last_piece_token_len) = bpe.encode("hello <|endoftext|>", &allowed)
 The generic `encode_as` and `count` helpers also return `Result`.
 The crate requires Rust 1.85 or newer.
 
-## Counting max_tokens parameter for a chat completion request
+## Estimating remaining context for a chat completion request
+
+`get_chat_completion_max_tokens` estimates the context capacity available after
+accounting for the input messages. Cap the result at the model's documented
+maximum output length before setting `max_tokens` or `max_completion_tokens`.
+Context windows and output limits are listed in the
+[OpenAI model documentation](https://developers.openai.com/api/docs/models).
 
 ```rust
 use tiktoken_rs::{get_chat_completion_max_tokens, ChatCompletionRequestMessage};
@@ -95,11 +101,11 @@ let messages = vec![
         ..Default::default()
     },
 ];
-let max_tokens = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
-println!("max_tokens: {}", max_tokens);
+let remaining_context = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
+println!("Remaining context: {}", remaining_context);
 ```
 
-## Counting max_tokens parameter for a chat completion request with [async-openai](https://crates.io/crates/async-openai)
+## Estimating remaining context for a chat completion request with [async-openai](https://crates.io/crates/async-openai)
 
 Enable the `async-openai` feature in your `Cargo.toml` file.
 
@@ -127,8 +133,8 @@ let messages = vec![
         name: None,
     }),
 ];
-let max_tokens = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
-println!("max_tokens: {}", max_tokens);
+let remaining_context = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
+println!("Remaining context: {}", remaining_context);
 # }
 ```
 
