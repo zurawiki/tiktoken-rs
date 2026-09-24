@@ -14,6 +14,8 @@ use crate::{
 /// use [`get_chat_completion_max_tokens`] instead.
 ///
 /// Calculates `context_size - prompt_tokens` for the given model.
+/// The result is remaining context capacity, not the model's maximum output length.
+/// Cap it at the model's documented output limit before using it in an API request.
 ///
 /// # Arguments
 ///
@@ -172,6 +174,10 @@ pub fn num_tokens_from_messages(
 /// This function determines the number of tokens left for a chat completion task, given the model and a slice of
 /// chat completion request messages. It first retrieves the tokenizer for the given model and checks if chat completion
 /// is supported. Then, it calculates the number of tokens in the existing messages using the appropriate tokenizer.
+///
+/// The result estimates remaining context capacity; it does not apply the model's
+/// separate maximum output length. Cap it at the documented output limit before
+/// using it as `max_tokens` or `max_completion_tokens` in an API request.
 ///
 /// # Arguments
 ///
@@ -761,6 +767,9 @@ pub mod async_openai {
     }
 
     /// Retrieves the maximum token limit for chat completions.
+    ///
+    /// This estimates remaining context capacity, not the model's maximum output length.
+    /// Cap the result at the model's documented output limit before making an API request.
     ///
     /// # Arguments
     ///

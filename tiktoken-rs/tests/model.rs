@@ -49,6 +49,14 @@ fn test_gpt5_context_size() {
 
 #[test]
 fn test_gpt4_context_size() {
+    assert_eq!(get_context_size("gpt-4"), Some(8192));
+    assert_eq!(get_context_size("gpt-4-turbo"), Some(128_000));
+    assert_eq!(get_context_size("gpt-4-turbo-preview"), Some(128_000));
+    assert_eq!(get_context_size("gpt-4-turbo-2024-04-09"), Some(128_000));
+    assert_eq!(
+        get_context_size("ft:gpt-4-turbo:org:name:id"),
+        Some(128_000)
+    );
     assert_eq!(get_context_size("gpt-4.5-preview"), Some(128_000));
     assert_eq!(get_context_size("gpt-4.1"), Some(1_047_576));
     assert_eq!(get_context_size("gpt-4.1-mini"), Some(1_047_576));
