@@ -77,11 +77,11 @@ not from a direct dependency MSRV.
 
 ## Estimating remaining context for a chat completion request
 
-Despite its name, `get_chat_completion_max_tokens` estimates remaining context
-capacity. Models also have a separate maximum output length; cap the result at
-that documented limit before setting `max_tokens` or `max_completion_tokens`.
-For example, GPT-4 Turbo has a 128,000-token context window but a
-[4,096-token output limit](https://developers.openai.com/api/docs/models/gpt-4-turbo).
+`get_chat_completion_max_tokens` estimates the context capacity available after
+accounting for the input messages. Cap the result at the model's documented
+maximum output length before setting `max_tokens` or `max_completion_tokens`.
+Context windows and output limits are listed in the
+[OpenAI model documentation](https://developers.openai.com/api/docs/models).
 
 ```rust
 use tiktoken_rs::{get_chat_completion_max_tokens, ChatCompletionRequestMessage};
