@@ -213,12 +213,16 @@ impl CoreBPE {
         &self,
         tokens: Vec<Rank>,
     ) -> impl Iterator<Item = Vec<u8>> + '_ {
-        tokens.into_iter().map(|token| {
-            let token_bytes = self
-                .decoder
+        // Look the token up in both the regular and special-token decoders, and
+        // skip it if it is in neither. This keeps token-sequence decoding robust
+        // against out-of-vocabulary ids (e.g. attacker-controlled model output or a
+        // mismatched vocab version) instead of panicking on a missing-map key —
+        // consistent with the non-panicking `decode()` / `decode_bytes()` path.
+        tokens.into_iter().filter_map(|token| {
+            self.decoder
                 .get(&token)
-                .unwrap_or_else(|| &self.special_tokens_decoder[&token]);
-            token_bytes.clone()
+                .or_else(|| self.special_tokens_decoder.get(&token))
+                .cloned()
         })
     }
 
