@@ -106,6 +106,8 @@ println!("max_tokens: {}", max_tokens);
 Need to enable the `async-openai` feature in your `Cargo.toml` file.
 
 ```rust
+# #[cfg(feature = "async-openai")]
+# {
 use tiktoken_rs::async_openai::get_chat_completion_max_tokens;
 use async_openai::types::chat::{
     ChatCompletionRequestMessage, ChatCompletionRequestSystemMessage,
@@ -129,6 +131,7 @@ let messages = vec![
 ];
 let max_tokens = get_chat_completion_max_tokens("o1-mini", &messages).unwrap();
 println!("max_tokens: {}", max_tokens);
+# }
 ```
 
 `tiktoken` supports these encodings used by OpenAI models:
