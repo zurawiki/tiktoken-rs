@@ -209,16 +209,20 @@ impl CoreBPE {
         }
     }
 
+    /// Decode each token into its bytes, preserving token boundaries.
+    ///
+    /// Unknown token IDs yield [`DecodeKeyError`] instead of panicking or being
+    /// silently discarded. Collect into a `Result<Vec<_>, _>` to stop at the first error.
     pub fn _decode_native_and_split(
         &self,
         tokens: Vec<Rank>,
-    ) -> impl Iterator<Item = Vec<u8>> + '_ {
+    ) -> impl Iterator<Item = Result<Vec<u8>, DecodeKeyError>> + '_ {
         tokens.into_iter().map(|token| {
-            let token_bytes = self
-                .decoder
+            self.decoder
                 .get(&token)
-                .unwrap_or_else(|| &self.special_tokens_decoder[&token]);
-            token_bytes.clone()
+                .or_else(|| self.special_tokens_decoder.get(&token))
+                .cloned()
+                .ok_or(DecodeKeyError { token })
         })
     }
 
@@ -281,6 +285,7 @@ impl CoreBPE {
 
         self._decode_native_and_split(encoded).map(|token| {
             // Map each token to a Result<String>
+            let token = token?;
             Ok(String::from_utf8_lossy(token.as_slice()).to_string())
         })
     }
