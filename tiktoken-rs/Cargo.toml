@@ -1,6 +1,6 @@
 [package]
 name = "tiktoken-rs"
-version = "0.12.0"
+version = "0.12.1"
 description = "Library for encoding and decoding with the tiktoken library in Rust"
 include = ["assets/**/*", "src/**/*", "README.md"]
 edition = "2024"
