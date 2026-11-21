@@ -179,6 +179,35 @@ impl CoreBPE {
         self.encode_ordinary(text).len()
     }
 
+    /// Returns the exact ordinary token count if it is at most `limit`, or `None`
+    /// if it is larger. Special-token spellings are treated as ordinary text.
+    ///
+    /// Like [`encode_ordinary`](Self::encode_ordinary), this matches the tokenizer's
+    /// regex against the full input. It stops counting once a completed regex
+    /// piece takes the total over the limit. A single long piece can still
+    /// require a full byte-pair encoding.
+    ///
+    /// ```
+    /// use tiktoken_rs::cl100k_base_singleton;
+    ///
+    /// let bpe = cl100k_base_singleton();
+    /// assert_eq!(bpe.count_ordinary_up_to("hello world", 2), Some(2));
+    /// assert_eq!(bpe.count_ordinary_up_to("hello world", 1), None);
+    /// ```
+    pub fn count_ordinary_up_to(&self, text: &str, limit: usize) -> Option<usize> {
+        let mut remaining = limit;
+        for mat in self._get_tl_regex().find_iter(text) {
+            let piece = mat.unwrap().as_str().as_bytes();
+            let count = if self.encoder.contains_key(piece) {
+                1
+            } else {
+                byte_pair_encode(piece, &self.encoder).len()
+            };
+            remaining = remaining.checked_sub(count)?;
+        }
+        Some(limit - remaining)
+    }
+
     /// Returns the number of tokens that `encode` would produce for the given
     /// `allowed_special` set, without returning the token list itself.
     ///
