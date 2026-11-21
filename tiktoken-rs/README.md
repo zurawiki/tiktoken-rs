@@ -57,6 +57,10 @@ let tokens = bpe.encode_with_special_tokens(
 println!("Token count: {}", tokens.len());
 ```
 
+To check a token budget, use `bpe.count_ordinary_up_to(text, limit)`. It returns
+`Some(exact_count)` when the text fits (including at the limit) and `None` when
+the count exceeds the limit. It treats markers such as `<|endoftext|>` as ordinary text.
+
 ## Encoding text
 
 `CoreBPE::encode` mirrors upstream `tiktoken` and returns a `Result`.

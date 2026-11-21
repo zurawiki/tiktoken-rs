@@ -308,7 +308,22 @@ fn test_encode_as_generic() {
 }
 
 fn assert_count_matches_encode(bpe: &CoreBPE, text: &str) {
-    assert_eq!(bpe.count_ordinary(text), bpe.encode_ordinary(text).len());
+    let expected = bpe.encode_ordinary(text).len();
+    assert_eq!(bpe.count_ordinary(text), expected);
+    for limit in [
+        0,
+        1,
+        expected.saturating_sub(1),
+        expected,
+        expected + 1,
+        usize::MAX,
+    ] {
+        assert_eq!(
+            bpe.count_ordinary_up_to(text, limit),
+            (expected <= limit).then_some(expected),
+            "limit {limit} on {text:?}"
+        );
+    }
     assert_eq!(
         bpe.count_with_special_tokens(text),
         bpe.encode_with_special_tokens(text).len()
@@ -328,11 +343,14 @@ fn count_matches_encode() {
         "",
         "🍌This is a sentence",
         "我想借几本汉语书",
+        "hello <|endoftext|>\r\n  world",
+        &"x".repeat(101),
         &"ab ".repeat(512),
     ];
     let bpes: Vec<CoreBPE> = vec![
         r50k_base().unwrap(),
         p50k_base().unwrap(),
+        p50k_edit().unwrap(),
         cl100k_base().unwrap(),
         o200k_base().unwrap(),
         o200k_harmony().unwrap(),
@@ -342,6 +360,28 @@ fn count_matches_encode() {
             assert_count_matches_encode(bpe, text);
         }
     }
+}
+
+#[test]
+fn bounded_count_does_not_reject_text_based_on_a_prefix() {
+    let bpe = cl100k_base().unwrap();
+    // Extending a prefix can change the regex split or allow another BPE merge.
+    for (prefix, full, limit) in [("today\n ", "today\n \n", 2), (" :::::::", " ::::::::", 1)] {
+        assert!(bpe.encode_ordinary(prefix).len() > limit);
+        assert_eq!(bpe.count_ordinary_up_to(full, limit), Some(limit));
+    }
+}
+
+#[test]
+fn bounded_count_respects_custom_pattern_and_vocabulary() {
+    let ranks = [(b"a".to_vec(), 0), (b"b".to_vec(), 1), (b"ab".to_vec(), 2)];
+    let bpe = CoreBPE::new(ranks.into_iter().collect(), HashMap::default(), "[ab]+").unwrap();
+
+    // This pattern ignores digits. "ab" is one vocabulary entry; "abab" merges to two.
+    assert_eq!(bpe.count_ordinary_up_to("123", 0), Some(0));
+    assert_eq!(bpe.encode_ordinary("ab 123 abab"), [2, 2, 2]);
+    assert_eq!(bpe.count_ordinary_up_to("ab 123 abab", 3), Some(3));
+    assert_eq!(bpe.count_ordinary_up_to("ab 123 abab", 2), None);
 }
 
 #[test]

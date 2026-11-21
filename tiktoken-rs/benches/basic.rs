@@ -115,3 +115,17 @@ fn bench_cl100k_decode_10x(b: &mut test::Bencher) {
         bpe.decode(&tokens).unwrap();
     });
 }
+
+#[bench]
+fn bench_cl100k_count_ordinary(b: &mut test::Bencher) {
+    let content = CONTENT.repeat(SIZE_FACTOR);
+    let bpe = cl100k_base().unwrap();
+    b.iter(|| bpe.count_ordinary(&content));
+}
+
+#[bench]
+fn bench_cl100k_count_ordinary_up_to_300(b: &mut test::Bencher) {
+    let content = CONTENT.repeat(SIZE_FACTOR);
+    let bpe = cl100k_base().unwrap();
+    b.iter(|| bpe.count_ordinary_up_to(&content, 300));
+}

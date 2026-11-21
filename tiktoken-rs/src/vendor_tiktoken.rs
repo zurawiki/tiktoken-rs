@@ -336,7 +336,7 @@ pub struct CoreBPE {
 }
 
 impl CoreBPE {
-    fn _get_tl_regex(&self) -> &Regex {
+    pub(crate) fn _get_tl_regex(&self) -> &Regex {
         // See performance notes above for what this is about
         // It's also a little janky, please make a better version of it!
         // However, it's nice that this doesn't leak memory to short-lived threads
